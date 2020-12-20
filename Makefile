@@ -29,4 +29,4 @@ endif
 
 .PHONY : clean
 clean :
-	rm -f $(LIB) $(OBJ) $(DEP)
+	rm -f $(COLIB) $(OBJ) $(DEP)
