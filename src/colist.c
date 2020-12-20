@@ -86,7 +86,7 @@ static void check_and_grow_size(list_t *ls, int n) {
 // list.insert(ls, [pos,] value)
 static int list_insert(lua_State *L) {
 	list_t *ls = checklist(L);
-	int pos, n, vidx;
+	int pos, vidx;
 	if (lua_gettop(L) == 2) {
 		pos = ls->size;
 		vidx = 2;
@@ -215,7 +215,6 @@ static int list_indexof(lua_State *L) {
 	list_t *ls = checklist(L);
 	lua_getuservalue(L, 1);		// <ls|v|uv>
 	int idx = -1;
-	int i;
 	for (int i = 0; i < ls->size; ++i) {
 		lua_rawgeti(L, 3, ls->ary[i].ref);	// <ls|v|uv|v>
 		if (lua_compare(L, 2, 4, LUA_OPEQ)) {
@@ -529,7 +528,7 @@ static const luaL_Reg mlib[] = {
 	{NULL, NULL}
 };
 
-LUAMOD_API int luaopen_colua_list(lua_State *L) {
+LUAMOD_API int luaopen_colib_list(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, LIST_MT);
 	luaL_setfuncs(L, mlib, 0);
