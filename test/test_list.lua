@@ -1,5 +1,5 @@
-package.cpath = package.cpath .. ";./?.lua"
-local list = require "colua.list"
+package.cpath = package.cpath .. ";../colib/?.so"
+local list = require "colib.list"
 
 -- simple random
 local seed = 123456789
