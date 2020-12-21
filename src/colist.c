@@ -24,8 +24,8 @@ typedef struct list_t {
 	refdata_t *ary;
 } list_t;
 
-#define LIST_MT "CO_LIST_MT"
-#define checklist(L) (list_t*)luaL_checkudata(L, 1, LIST_MT)
+const char * const LIST_KEY = "CO_LIST";
+#define checklist(L) (list_t*)luaL_checkudata(L, 1, LIST_KEY)
 
 //------------------------------------------------------------------------------------------------
 /* index of free-list header */
@@ -67,7 +67,7 @@ static int list_new(lua_State *L) {
 	ls->size = 0;
 	ls->ref = 0;
 	ls->ary = (refdata_t*)malloc(ls->cap * sizeof(refdata_t));
-	luaL_setmetatable(L, LIST_MT);		// <ud>
+	luaL_setmetatable(L, LIST_KEY);		// <ud>
 	lua_createtable(L, ls->cap, 0);		// <ud|tab>
 	lua_setuservalue(L, -2);			// <ud>
 	return 1;
@@ -193,7 +193,7 @@ static int list_extend(lua_State *L) {
 			ls->ary[ls->size++].ref = ref;
 		}
 	} else if (tp == LUA_TUSERDATA) {	// <ls|ls2>
-		list_t *ls2 = (list_t*)luaL_checkudata(L, 2, LIST_MT);
+		list_t *ls2 = (list_t*)luaL_checkudata(L, 2, LIST_KEY);
 		int n = ls2->size;
 		check_and_grow_size(ls, n);
 		lua_getuservalue(L, 1);		// <ls|ls2|uv>
@@ -530,7 +530,7 @@ static const luaL_Reg mlib[] = {
 
 LUAMOD_API int luaopen_colib_list(lua_State *L) {
 	luaL_checkversion(L);
-	luaL_newmetatable(L, LIST_MT);
+	luaL_newmetatable(L, LIST_KEY);
 	luaL_setfuncs(L, mlib, 0);
 	luaL_newlib(L, lib);
 	return 1;
