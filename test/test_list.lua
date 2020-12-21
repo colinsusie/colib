@@ -2,7 +2,7 @@ package.cpath = package.cpath .. ";../colib/?.so"
 package.path = package.path ..";../colib/?.lua"
 
 
-local colist = require "colist"
+local colist = require "list"
 
 -- simple random
 local seed = 123456789

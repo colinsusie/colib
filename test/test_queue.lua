@@ -1,7 +1,7 @@
 package.cpath = package.cpath .. ";../colib/?.so"
 package.path = package.path ..";../colib/?.lua"
 
-local coqueue = require "coqueue"
+local coqueue = require "queue"
 
 local q = coqueue.new()
 print(q)
@@ -50,3 +50,30 @@ for i = 1, 5 do
 end
 printq(q)
 print("size: ", #q)
+
+print("benchmark:==============")
+local q = coqueue.new()
+local t = {}
+for i = 1, 10000 do
+	coqueue.push(q, i)
+	t[i] = i
+end
+
+local c = os.clock()
+local remove = table.remove
+local insert = table.insert
+for i = 1, 100000 do
+	remove(t, 1)
+	insert(t, i)
+end
+print("table: ", os.clock() - c)
+
+c = os.clock()
+local pop = coqueue.pop
+local push = coqueue.push
+for i = 1, 100000 do
+	pop(q)
+	push(q, i)
+end
+print("queue: ", os.clock() - c)
+
