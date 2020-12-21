@@ -6,10 +6,12 @@ local type = type
 local pairs = pairs
 local setmetatable = setmetatable
 local getmetatable = getmetatable
-local gcore = require "gcore"
+local rawget = rawget
+
 local rtl = {}
 
 ---取类名，外部须确保o是class或object
+---@return string
 function rtl.classname(o)
     return o._classname
 end
@@ -19,8 +21,8 @@ function rtl.getclass(o)
 	return o._class
 end
 
---- 尝试复制一个对象
---@return 返回新的对象
+---尝试复制一个对象
+---@return any 返回新的对象
 function rtl.clone(o)
     local lookup = {}
     local function _copy(o)
@@ -67,12 +69,6 @@ end
 -- 别名简化
 rtl.str = rtl.tostring
 
----定义类：
---@param classname 类名
---@param super 基类，可选，省略表示不从任何类继承
---@return 返回代表类的表
---对于这个类来说：调用rtl.is_class(cls) == true
---
 --[[
     --实现OO机制，类定义如下, 切记类名在正确：
     MyClass = class("MyClass", BaseClass)
@@ -99,12 +95,12 @@ rtl.str = rtl.tostring
     mycls:func(1, 2)
 
 ]]
-
-local setmetatable = setmetatable
-local rawget = rawget
-
 rtl._class_metatable = nil
 
+---定义类：
+---@param classname string 类名
+---@param super table 基类，可选，省略表示不从任何类继承
+---@return table 返回代表类的表
 function rtl.class(classname, super)
     local klass = {}
     klass._classname = classname
@@ -173,6 +169,7 @@ function rtl.is_instance(obj, klass)
 end
 
 function rtl.traceback(msg, level)
+    local gcore = require "gcore"
     level = level or 3
     return gcore.traceback(tostring(msg), level)
 end
