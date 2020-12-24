@@ -70,6 +70,7 @@ static int l_traceback(lua_State *L) {
 
 static const luaL_Reg lib[] = {
 	{"traceback", l_traceback},
+	{NULL, NULL},
 };
 
 int luaopen_colib_dbg(lua_State *L) {
