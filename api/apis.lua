@@ -1,9 +1,10 @@
 ---
---- colist API说明
+--- API说明，配合EmmyLua
 --- Created by colin.
---- DateTime: 2020/12/20 17:22
+--- DateTime: 2020/12/24 23:13
 ---
 
+----------------------------------------------------------------------------------------------------
 ---@class listobj 数组对象
 
 ---@class colist 数组模块
@@ -88,3 +89,42 @@ function colist.exchange(list, idx1, idx2) end
 ---@param cmp fun(a, b): boolean  比较函数： a < b 返回true，a排在b前面
 ---@param key fun(v): number key函数，返回元素的整型值用于排序
 function colist.sort(list, cmp, key) end
+
+
+----------------------------------------------------------------------------------------------------
+---@class queueobj 队列对象
+
+---@class coqueue 队列模块
+local coqueue = {}
+
+---新建一个队伍对象
+---@return queueobj
+function coqueue.new() end
+
+---将队伍转成table返回
+---@param q queueobj
+---@return table
+function coqueue.totable(q) end
+
+---向队伍压入值
+---@param q queueobj
+---@param v any
+function coqueue.push(q, v) end
+
+---从队伍弹出值
+---@param q queueobj
+---@return any
+function coqueue.pop(q) end
+
+
+----------------------------------------------------------------------------------------------------
+
+---@class codbg 调试模块
+local codbg = {}
+
+---打印traceback，作用类似debug.traceback，但会显示每一层的变量信息
+---@param msg string 附加消息
+---@param level number 从第几层级开始，默认为1
+---@param max number 打印的最大层次，默认是20
+---@return string 返回堆栈字符串
+function codbg.traceback(msg, level, max) end
