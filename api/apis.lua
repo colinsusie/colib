@@ -128,3 +128,17 @@ local codbg = {}
 ---@param max number 打印的最大层次，默认是20
 ---@return string 返回堆栈字符串
 function codbg.traceback(msg, level, max) end
+
+----------------------------------------------------------------------------------------------------
+---@class coseri Lua序列化模块，有一些限制：不能有函数对象，Table的元表会忽略
+local coseri = {}
+
+---序列化对象
+---@vararg any 对象列表
+---@return string 返回打包后的数据
+function coseri.pack(...) end
+
+---反序列化对象
+---@data string 序列化数据
+---@return any 反序列化出来的对象列表
+function coseri.unpack(data) end
