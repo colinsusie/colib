@@ -129,12 +129,12 @@ local codbg = {}
 ---@return string 返回堆栈字符串
 function codbg.traceback(msg, level, max) end
 
-----------------------------------------------------------------------------------------------------
----@class coseri Lua序列化模块，有一些限制：不能有函数对象，Table的元表会忽略
+------------------------------------------------------------------------------------------------------
+---@class coseri Lua序列化模块，限制：不能有函数对象，忽略元表
 local coseri = {}
 
 ---序列化对象
----@vararg any 对象列表
+---@vararg any 对象列表，可以打包多个对象
 ---@return string 返回打包后的数据
 function coseri.pack(...) end
 
@@ -142,3 +142,76 @@ function coseri.pack(...) end
 ---@data string 序列化数据
 ---@return any 反序列化出来的对象列表
 function coseri.unpack(data) end
+
+------------------------------------------------------------------------------------------------------
+
+---@class costr 字符串模块，不支持unicode字符
+local costr = {}
+
+---判断str是否从prefix开始
+---@param str string 字符串
+---@param prefix string 后缀字符串
+---@param s number 开始索引，默认等于1；支持负索引，-1表示#str
+---@param e number 结束索引，默认等于#str；支持负索引，-1表示#str
+---@return boolean
+function costr.startswith(str, prefix, s, e) end
+
+
+---判断str是否以suffix结尾
+---@param str string 字符串
+---@param suffix string 后缀字符串
+---@param s number 开始索引，默认等于1；支持负索引，-1表示#str
+---@param e number 结束索引，默认等于#str；支持负索引，-1表示#str
+---@return boolean
+function costr.endswith(str, suffix, s, e) end
+
+---返回长度为width的左对齐字符串，右边空余处用fillchar填充
+---如果str的长度大于width，则直接返回str。
+---@param str string 原字符串
+---@param width number 对齐后的宽度
+---@param fillchar string 填充字符，默认为空格
+---@return string
+function costr.ljust(str, width, fillchar) end
+
+---返回长度为width的右对齐字符串，左边空余处用fillchar填充
+---如果str的长度大于width，则直接返回str。
+---@param str string 原字符串
+---@param width number 对齐后的宽度
+---@param fillchar string 填充字符，默认为空格
+---@return string
+function costr.rjust(str, width, fillchar) end
+
+---返回长度为width的居中对齐字符串，两边空余处用fillchar填充
+---如果str的长度大于width，则直接返回str。
+---@param str string 原字符串
+---@param width number 对齐后的宽度
+---@param fillchar string 填充字符，默认为空格
+---@return string
+function costr.center(str, width, fillchar) end
+
+---删除前导字符串
+---@param str string 源字符串
+---@param chars string 要删除的字符串集合，默认为空格(\t\n\v\f\r )
+---@return string 返回结果字符串
+function costr.lstrip(str, chars) end
+
+---删除尾随字符
+---@param str string 源字符串
+---@param chars string 要删除的字符串集合，默认为空格(\t\n\v\f\r )
+---@return string 返回结果字符串
+function costr.rstrip(str, chars) end
+
+---删除前导和尾随字符
+---@param str string 源字符串
+---@param chars string 要删除的字符串集合，默认为空格(\t\n\v\f\r )
+---@return string 返回结果字符串
+function costr.strip(str, chars) end
+
+---将字符串分隔为多个子字符串，注意该函数只支持0结尾的字符串
+---@param str string 源字符串
+---@param sep string 分隔串，比如, = <>等等
+---@param matchchar boolean 如果为true，sep表示字符集合，只要匹配到集合中的任意字符都算命中；
+---	否则为一个字符串，只有匹配到整个字符串才算命中。
+---@return string[] 返回分隔后的字符串列表
+function costr.split(str, sep, matchchar) end
+

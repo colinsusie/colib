@@ -1,9 +1,7 @@
 local type = type
 local tconcat = table.concat
-local tostring = tostring
 local sformat = string.format
 local pairs = pairs
-local ipairs = ipairs
 local getmetatable = getmetatable
 local srep = string.rep
 local tointeger = math.tointeger
@@ -142,7 +140,7 @@ local function writetable(t, arg)
 end
 
 ---写对象
-function writeobject(obj, arg)
+writeobject = function(obj, arg)
 	local tp = type(obj)
 	if tp == "string" then
 		writestr(sformat("%q", obj), arg)
