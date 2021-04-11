@@ -5,7 +5,10 @@ DEP := $(SRC:.c=.d)
 COLIB := colib/colib.so
 
 CC := gcc -std=c99
-CFLAGS := -Wall -O2 -fPIC
+# setting include path for lua
+INC :=
+# INC := -I../lua/lua-5.4.2/src
+CFLAGS := -Wall -O2 -fPIC $(INC)
 LDFLAGS := -shared
 LDLIBS := -lm
 
