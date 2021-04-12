@@ -4,8 +4,8 @@
  */
 
 
-#ifndef coref_h
-#define coref_h
+#ifndef _COREF_H
+#define _COREF_H
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -24,4 +24,4 @@ int refvalue(lua_State *L, int *maxref, int t);
  */
 void unrefvalue(lua_State* L, int t, int ref);
 
-#endif
+#endif // _COREF_H
