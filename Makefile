@@ -12,6 +12,13 @@ CFLAGS := -Wall -O2 -fPIC $(INC)
 LDFLAGS := -shared
 LDLIBS := -lm
 
+PLAT := $(shell uname)
+
+# load flags for macosx
+ifeq ($(PLAT), Darwin)
+LDFLAGS := -undefined dynamic_lookup
+endif
+
 all: $(COLIB)
 	@echo "done"
 
