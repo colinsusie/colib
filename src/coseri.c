@@ -1,7 +1,7 @@
 /**
  * Lua对象序列化，参考自skynet的序列化模块(https://github.com/cloudwu/skynet)，格式总体上相同，但有一些细微的差别
  * 概述：
- * 	- 仅支持的对象类型：nil, boolean, number, string, table
+ * 	- 仅支持的对象类型：nil, boolean, number, string, table, lightuserdata
  * 	- 数值类型为小端字节序。
  * 
  * 序列化格式：
@@ -40,6 +40,8 @@
  * 			数组元素为按顺序存储的对象。
  * 			哈希表为先存一个key对象，再存一个value对象，一直到遇见nil对象为止。
  * 
+ * 		type = TYPE_USERDATA 表示lightuserdata，由于是一个指针，所以不可以跨进程传输；不需要cookie；objdata是一个指针
+ * 
  * pack 可以将多对象一起打包；unpack解包出多个对象返回。
  */
 #include <stdlib.h>
@@ -57,6 +59,7 @@
 #define TYPE_SSTR 4
 #define TYPE_LSTR 5
 #define TYPE_TABLE 6
+#define TYPE_USERDATA 7
 
 #define TYPE_INT_0 0
 #define TYPE_INT_8 1
@@ -260,6 +263,11 @@ static void pack_table(lua_State *L, WriteBuffer *b, int index, int depth) {
 	pack_hash(L, b, index, depth, array_size);
 }
 
+static inline void pack_pointer(lua_State *L, WriteBuffer *b, const void *ud) {
+	void *p = wb_prepbuffsize(b, sizeof(ud));
+	memcpy(p, &ud, sizeof(ud));
+}
+
 static void pack_value(lua_State *L, WriteBuffer *b, int index, int depth) {
 	if (depth > MAX_DEPTH) {
 		wb_free(b);
@@ -294,6 +302,11 @@ static void pack_value(lua_State *L, WriteBuffer *b, int index, int depth) {
 	}
 	case LUA_TTABLE: {
 		pack_table(L, b, index, depth+1);
+		break;
+	}
+	case LUA_TLIGHTUSERDATA: {
+		wb_addchar(b, TYPE_USERDATA);
+		pack_pointer(L, b, lua_touserdata(L, index));
 		break;
 	}
 	default:
@@ -366,7 +379,7 @@ static lua_Integer unpack_int(lua_State *L, ReadBuffer *b, int cookie) {
 	return 0;
 }
 
-static lua_Number unpack_float(lua_State *L, ReadBuffer *b, int cookie) {
+static lua_Number unpack_float(lua_State *L, ReadBuffer *b) {
 	size_t size = sizeof(double);
 	const char *p = rb_prepbuffsize(L, b, size);
 	double n;
@@ -379,6 +392,13 @@ static lua_Number unpack_float(lua_State *L, ReadBuffer *b, int cookie) {
 			*(dest--) = *(p++);
 	}
 	return (lua_Number)n;
+}
+
+static void* unpack_pointer(lua_State *L, ReadBuffer *b) {
+	void *ud;
+	const char *p = rb_prepbuffsize(L, b, sizeof(ud));
+	memcpy(&ud, p, sizeof(ud));
+	return ud;
 }
 
 static inline const char* unpack_str(lua_State *L, ReadBuffer *b, size_t sz) {
@@ -435,7 +455,7 @@ static void unpack_value(lua_State *L, ReadBuffer *b) {
 		break;
 	}
 	case TYPE_FLOAT: {
-		lua_pushnumber(L, unpack_float(L, b, cookie));
+		lua_pushnumber(L, unpack_float(L, b));
 		break;
 	}
 	case TYPE_SSTR: {
@@ -458,6 +478,10 @@ static void unpack_value(lua_State *L, ReadBuffer *b) {
 	}
 	case TYPE_TABLE: {
 		unpack_table(L, b, cookie);
+		break;
+	}
+	case TYPE_USERDATA: {
+		lua_pushlightuserdata(L, unpack_pointer(L, b));
 		break;
 	}
 	default:

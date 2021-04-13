@@ -57,4 +57,3 @@ end
 --	f2:write(dbg.str(obj))
 --	f2:close()
 --end
-
