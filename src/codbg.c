@@ -1,4 +1,7 @@
+#include <stddef.h>
 #include <stdlib.h>
+#include <time.h>
+#include <stdint.h>
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -68,8 +71,17 @@ static int l_traceback(lua_State *L) {
 	return 1;
 }
 
+static int l_getclock(lua_State *L) {
+	struct timespec ti;
+	clock_gettime(CLOCK_MONOTONIC, &ti);
+	lua_Integer c = (uint64_t)1000000000 * ti.tv_sec + ti.tv_nsec;
+	lua_pushinteger(L, c);
+	return 1;
+}
+
 static const luaL_Reg lib[] = {
 	{"traceback", l_traceback},
+	{"getclock", l_getclock},
 	{NULL, NULL},
 };
 

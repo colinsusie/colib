@@ -4,7 +4,7 @@ OBJ := $(SRC:.c=.o)
 DEP := $(SRC:.c=.d)
 COLIB := colib/colib.so
 
-CC := gcc -std=c99
+# CC := gcc
 # setting include path for lua
 INC :=
 # INC := -I../lua/lua-5.4.2/src

@@ -62,3 +62,6 @@ setmetatable(t, {
 print(codbg.str(t, "\n", "    "))
 print(codbg.str(nil))
 print(codbg.str("aabbcc"))
+
+print(codbg.getclock())
+print(codbg.getclock())

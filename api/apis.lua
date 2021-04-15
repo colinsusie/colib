@@ -129,6 +129,10 @@ local codbg = {}
 ---@return string 返回堆栈字符串
 function codbg.traceback(msg, level, max) end
 
+---获取高精度时钟
+---@return 返回纳秒
+function codbg.getclock() end
+
 ------------------------------------------------------------------------------------------------------
 ---@class coseri Lua序列化模块，限制：不能有函数对象，忽略元表
 local coseri = {}
