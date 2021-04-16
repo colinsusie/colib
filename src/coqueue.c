@@ -8,6 +8,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "coref.h"
+#include "coconf.h"
 
 typedef struct coqueue_t {
 	int *refs;
@@ -27,7 +28,7 @@ static int queue_new(lua_State *L) {
 	coqueue_t* q = (coqueue_t*)lua_newuserdata(L, sizeof(coqueue_t));
 	memset(q, 0, sizeof(coqueue_t));
 	q->size = INIT_SIZE;
-	q->refs = (int*)malloc(q->size*sizeof(int));
+	q->refs = (int*)co_malloc(q->size*sizeof(int));
 	luaL_getmetatable(L, QUQUE_KEY); // ud|mt
 	lua_setmetatable(L, -2);	// ud
 	lua_newtable(L);			// ud|t
@@ -50,7 +51,7 @@ static int queue_len(lua_State *L) {
 
 static int queue_gc(lua_State *L) {
 	coqueue_t *q = checkqueue(L);
-	free(q->refs);
+	co_free(q->refs);
 	return 0;
 }
 
@@ -85,7 +86,7 @@ static void trygrow(coqueue_t *q) {
 	int qsz = get_len(q);
 	if (qsz + 1 >= q->size) {
 		int newsz = q->size * 2;
-		q->refs = realloc(q->refs,  newsz * sizeof(int));
+		q->refs = co_realloc(q->refs,  newsz * sizeof(int));
 		if (q->tail < q->head) {
 			int count = q->size - q->head;
 			int newhead = newsz - count;
@@ -161,7 +162,7 @@ static luaL_Reg m[] = {
 	{NULL, NULL},
 };
 
-int luaopen_colib_queue(lua_State *L) {
+LUAMOD_API int luaopen_colib_queue(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, QUQUE_KEY);
 	luaL_setfuncs(L, m, 0);

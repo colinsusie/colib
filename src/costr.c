@@ -237,7 +237,7 @@ static const luaL_Reg lib[] = {
 	{NULL, NULL},
 };
 
-int luaopen_colib_str(lua_State *L) {
+LUAMOD_API int luaopen_colib_str(lua_State *L) {
 	luaL_newlib(L, lib);
 	return 1;
 }

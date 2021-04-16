@@ -51,6 +51,7 @@
 #include <assert.h>
 #include "lua.h"
 #include "lauxlib.h"
+#include "coconf.h"
 
 #define TYPE_NIL 0
 #define TYPE_BOOL 1
@@ -101,10 +102,10 @@ static char* wb_prepbuffsize(WriteBuffer *b, size_t sz) {
 		if (newcap < b->size + sz)
 			newcap = b->size + sz;
 		if (b->buff == b->b) {
-			b->buff = (char*)malloc(newcap);
+			b->buff = (char*)co_malloc(newcap);
 			memcpy(b->buff, b->b, b->size * sizeof(char));
 		} else {
-			b->buff = (char*)realloc(b->buff, newcap);
+			b->buff = (char*)co_realloc(b->buff, newcap);
 		}
 		b->cap = newcap;
 	}
@@ -133,7 +134,7 @@ static void wb_buffinit(WriteBuffer *b) {
 
 static void wb_free(WriteBuffer *b) {
 	if (b->buff != b->b) {
-		free(b->buff);
+		co_free(b->buff);
 	}
 }
 
@@ -521,7 +522,7 @@ static const luaL_Reg lib[] = {
 	{NULL, NULL},
 };
 
-int luaopen_colib_seri(lua_State *L) {
+LUAMOD_API int luaopen_colib_seri(lua_State *L) {
 	luaL_newlib(L, lib);
 	return 1;
 }

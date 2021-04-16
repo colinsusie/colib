@@ -11,6 +11,7 @@
 #include <string.h>
 #include "lua.h"
 #include "lauxlib.h"
+#include "coconf.h"
 
 typedef struct refdata_t {
 	int ref;
@@ -66,7 +67,7 @@ static int list_new(lua_State *L) {
 	ls->cap = cap;
 	ls->size = 0;
 	ls->ref = 0;
-	ls->ary = (refdata_t*)malloc(ls->cap * sizeof(refdata_t));
+	ls->ary = (refdata_t*)co_malloc(ls->cap * sizeof(refdata_t));
 	luaL_setmetatable(L, LIST_KEY);		// <ud>
 	lua_createtable(L, ls->cap, 0);		// <ud|tab>
 	lua_setuservalue(L, -2);			// <ud>
@@ -78,7 +79,7 @@ static void check_and_grow_size(list_t *ls, int n) {
 	while (ls->size + n > newcap)
 		newcap <<= 1;
 	if (newcap != ls->cap) {
-		ls->ary = (refdata_t*)realloc(ls->ary, newcap*sizeof(refdata_t));
+		ls->ary = (refdata_t*)co_realloc(ls->ary, newcap*sizeof(refdata_t));
 		ls->cap = newcap;
 	}
 }
@@ -277,7 +278,7 @@ static int list_len(lua_State *L) {
 // free
 static int list_gc(lua_State *L) {
 	list_t *ls = checklist(L);
-	free(ls->ary);
+	co_free(ls->ary);
 	return 0;
 }
 
@@ -296,7 +297,7 @@ static int list_clear(lua_State *L) {
 	ls->ref = 0;
 	if (shink) {
 		ls->cap = 4;
-		ls->ary = (refdata_t*)realloc(ls->ary, ls->cap * sizeof(refdata_t));
+		ls->ary = (refdata_t*)co_realloc(ls->ary, ls->cap * sizeof(refdata_t));
 	}
 	lua_createtable(L, ls->cap, 0);
 	lua_setuservalue(L, 1);

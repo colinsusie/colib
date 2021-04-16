@@ -130,7 +130,7 @@ local codbg = {}
 function codbg.traceback(msg, level, max) end
 
 ---获取高精度时钟
----@return 返回纳秒
+---@return number 返回纳秒
 function codbg.getclock() end
 
 ------------------------------------------------------------------------------------------------------
@@ -218,4 +218,75 @@ function costr.strip(str, chars) end
 ---	否则为一个字符串，只有匹配到整个字符串才算命中。
 ---@return string[] 返回分隔后的字符串列表
 function costr.split(str, sep, matchchar) end
+
+------------------------------------------------------------------------------------------------------
+
+---@class cobitobj 位图对象
+
+---@class cobitarray 位图数组
+local cobitarray = {}
+
+
+---创建一个位图数组： wordsize * bitsize = 能存放的位数量
+---@param wordsize number 整型元素的长度
+---@param bitsize number 一个整型的位大小
+---@param cobaobj
+function cobitarray.new(wordsize, bitsize) end
+
+---返回整型元素列表
+---@param obj cobitobj
+---@return number[]
+function cobitarray.tointegers(obj) end
+
+---返回位列表
+---@param obj cobitobj
+---@return boolean[]
+function cobitarray.tobooleans(obj) end
+
+---从整型数组加载位数据
+---@param obj cobitobj
+---@param ints number[]
+function cobitarray.fromintegers(obj, ints) end
+
+---从布尔数组加载位数据
+---@param obj cobitobj
+---@param bools boolean[]
+function cobitarray.frombooleans(obj, bools) end
+
+---将位图数组的内容串连成字符串返回
+---@param obj cobitobj
+---@param sep string 分隔符
+---@param i number 起始索引，默认为1
+---@param j number 结束索引，默认为#list
+---@return string
+function cobitarray.concat(obj, sep, i, j) end
+
+---清除位图数组的内容
+function cobitarray.clear(obj) end
+
+---交换位图数组的两个值
+---@param obj cobitobj
+---@param i number
+---@param j number
+function cobitarray.exchange(obj, i, j) end
+
+---调整位图数组的大小，注意wordsize是整型元素的数量
+---@param obj cobitobj
+---@param wordsize number 整型元素的数量
+function cobitarray.resize(obj, wordsize) end
+
+---设置位图数组的值，作用类似于 cobitobj[i] = v，不同的是如果i超出数组边界，会自动扩充数组
+---@param obj cobitobj
+---@param i number
+---@param v boolean
+function cobitarray.set(obj, i, v) end
+
+---返回位图数组的整型元素的数量
+---@param obj cobitobj
+---@return number
+function cobitarray.wordsize(obj) end
+
+---返回位图数组的整型元素的位大小
+---@param obj cobitobj
+function cobitarray.wordbits(obj) end
 
