@@ -3,7 +3,7 @@ package.path = package.path ..";../colib/?.lua"
 
 local bitarray = require "bitarray"
 
-local a = bitarray.new(2, 64)
+local a = bitarray.new(2, 48)
 
 print("len", #a)
 
@@ -53,6 +53,6 @@ print(a[32], a[1], a[200], a[2])
 print(bitarray.wordsize(a))
 print(bitarray.wordbits(a))
 
-bitarray.resize(a, 3)
+bitarray.resize(a, 4)
 print("resize: ", table.concat(bitarray.tointegers(a), ","))
 
