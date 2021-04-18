@@ -179,19 +179,19 @@ static int sw_elapsed_ns(lua_State *L) {
 }
 
 static const luaL_Reg swme[] = {
-  {"start", sw_start},
-  {"stop", sw_stop},
-  {"elapsed", sw_elapsed},
-  {"elapsed_ms", sw_elapsed_ms},
-  {"elapsed_us", sw_elapsed_us},
-  {"elapsed_ns", sw_elapsed_ns},
-  {NULL, NULL}
+	{"start", sw_start},
+	{"stop", sw_stop},
+	{"elapsed", sw_elapsed},
+	{"elapsed_ms", sw_elapsed_ms},
+	{"elapsed_us", sw_elapsed_us},
+	{"elapsed_ns", sw_elapsed_ns},
+	{NULL, NULL}
 };
 
 static const luaL_Reg swmt[] = {
-  {"__index", NULL},
-  {"__tostring", sw_tostring},
-  {NULL, NULL}
+	{"__index", NULL},
+	{"__tostring", sw_tostring},
+	{NULL, NULL}
 };
 
 static void init_stopwatch_mt(lua_State *L) {
