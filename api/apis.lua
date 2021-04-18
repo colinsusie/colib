@@ -130,8 +130,37 @@ local codbg = {}
 function codbg.traceback(msg, level, max) end
 
 ---获取高精度时钟
----@return number 返回纳秒
-function codbg.getclock() end
+---@return number 返回秒，是一个浮点数
+function codbg.hrclock() end
+
+---新建一个stopwatch对象
+---@return costopwatch
+function codbg.stopwatch() end
+
+---@class costopwatch 用于计时
+local costopwatch = {}
+
+---开始计时
+function costopwatch:start() end
+
+---结束计时
+function costopwatch:stop() end
+
+---取得start/stop的计时间隔
+---@return number 返回秒数，是一个浮点数
+function costopwatch:elapsed() end
+
+---取得start/stop的计时间隔
+---@return number 返回毫秒，是一个整数
+function costopwatch:elapsed_ms() end
+
+---取得start/stop的计时间隔
+---@return number 返回微秒，是一个整数
+function costopwatch:elapsed_us() end
+
+---取得start/stop的计时间隔
+---@return number 返回纳秒，是一个整数
+function costopwatch:elapsed_ns() end
 
 ------------------------------------------------------------------------------------------------------
 ---@class coseri Lua序列化模块，限制：不能有函数对象，忽略元表

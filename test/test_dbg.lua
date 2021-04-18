@@ -1,4 +1,9 @@
-package.cpath = package.cpath .. ";../colib/?.so"
+-- 先这样判断是不是Windows
+if package.config:sub(1, 1) == "\\" then
+	package.cpath = package.cpath .. ";../colib/?.dll"
+else
+	package.cpath = package.cpath .. ";../colib/?.so"
+end
 package.path = package.path ..";../colib/?.lua"
 
 local codbg = require "dbg"
@@ -63,5 +68,16 @@ print(codbg.str(t, "\n", "    "))
 print(codbg.str(nil))
 print(codbg.str("aabbcc"))
 
-print(codbg.getclock())
-print(codbg.getclock())
+print(codbg.hrclock())
+print(codbg.hrclock())
+
+local stopwatch = codbg.stopwatch()
+stopwatch:start()
+for i = 1, 10000 do
+	codbg.str(t)
+end
+stopwatch:stop()
+print("seconds: ", stopwatch:elapsed())
+print("milliseconds: ", stopwatch:elapsed_ms())
+print("microseconds: ", stopwatch:elapsed_us())
+print("nanoseconds: ", stopwatch:elapsed_ns())

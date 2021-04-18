@@ -3,6 +3,7 @@
  * @author colin
  * @date 2020/12/20
  */
+#define LUA_LIB
 #include <stdlib.h>
 #include <string.h>
 #include "lua.h"

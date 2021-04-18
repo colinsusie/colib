@@ -3,6 +3,7 @@
  * @author colin
  * @date 2021/4/16
  */
+#define LUA_LIB
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>

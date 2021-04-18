@@ -6,6 +6,7 @@
  * @author colin
  * @date 2020/8/10
  */
+#define LUA_LIB
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>

@@ -44,6 +44,7 @@
  * 
  * pack 可以将多对象一起打包；unpack解包出多个对象返回。
  */
+#define LUA_LIB
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>

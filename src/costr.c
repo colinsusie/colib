@@ -1,3 +1,7 @@
+/**
+ * 字符串处理函数
+ */
+#define LUA_LIB
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

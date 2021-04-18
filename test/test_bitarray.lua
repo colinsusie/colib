@@ -1,4 +1,9 @@
-package.cpath = package.cpath .. ";../colib/?.so"
+-- 先这样判断是不是Windows
+if package.config:sub(1, 1) == "\\" then
+	package.cpath = package.cpath .. ";../colib/?.dll"
+else
+	package.cpath = package.cpath .. ";../colib/?.so"
+end
 package.path = package.path ..";../colib/?.lua"
 
 local bitarray = require "bitarray"
