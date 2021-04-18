@@ -101,7 +101,7 @@ link /OUT:luac.exe luac._obj lua-static.lib
 ## 使用该库的注意点
 
 - apis.lua 和其他lua文件都有详尽的接口说明，建议使用 IDEA + EmmyLua 插件，以获得方便的代码提示。
-- test 目录中是各模块的测试代码，查看这些代码可以了解各模块的使用方法。
+- test 目录中是各模块的测试代码，查看这些代码可以了解各模块的使用方法。进入test, 然后执行`lua test_xxx`。
 - 由于本人的精力有限，该库只支持 Lua5.3 以上的版本。
 
 ## 待开发的模块
