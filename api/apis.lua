@@ -319,3 +319,36 @@ function cobitarray.wordsize(obj) end
 ---@param obj cobitobj
 function cobitarray.wordbits(obj) end
 
+
+------------------------------------------------------------------------------------------------------
+
+---@class cofilesys 文件系统模块
+local cofilesys = {}
+
+---扫描目录，返回一个迭代器，用在for循环中，不会包含 . 和 .. 两个特殊目录
+---@param path string 目录路径
+function cofilesys.scandir(path) end
+
+---判断文件或目录是否存在
+---@param path string 路径
+function cofilesys.exists(path) end
+
+---获得文件的大小
+---@param path string 路径
+function cofilesys.getsize(path) end
+
+---取文件的修改时间
+---@param path string 路径
+function cofilesys.getmtime(path) end
+
+---取文件的访问时间
+---@param path string 路径
+function cofilesys.getatime(path) end
+
+---取文件的创建时间
+---@param path string 路径
+function cofilesys.getctime(path) end
+
+---取文件的模式
+---@param path string 路径
+function cofilesys.getmode(path) end
