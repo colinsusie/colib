@@ -184,19 +184,15 @@ local costr = {}
 ---判断str是否从prefix开始
 ---@param str string 字符串
 ---@param prefix string 后缀字符串
----@param s number 开始索引，默认等于1；支持负索引，-1表示#str
----@param e number 结束索引，默认等于#str；支持负索引，-1表示#str
 ---@return boolean
-function costr.startswith(str, prefix, s, e) end
+function costr.startswith(str, prefix) end
 
 
 ---判断str是否以suffix结尾
 ---@param str string 字符串
 ---@param suffix string 后缀字符串
----@param s number 开始索引，默认等于1；支持负索引，-1表示#str
----@param e number 结束索引，默认等于#str；支持负索引，-1表示#str
 ---@return boolean
-function costr.endswith(str, suffix, s, e) end
+function costr.endswith(str, suffix) end
 
 ---返回长度为width的左对齐字符串，右边空余处用fillchar填充
 ---如果str的长度大于width，则直接返回str。
@@ -247,6 +243,13 @@ function costr.strip(str, chars) end
 ---	否则为一个字符串，只有匹配到整个字符串才算命中。
 ---@return string[] 返回分隔后的字符串列表
 function costr.split(str, sep, matchchar) end
+
+---从后往前查找子字符串
+---@param str string 源字符串
+---@param sub string 子字符串
+---@param start number 开始查找的位置，默认是#str
+---@return number, number 如果找到，返回sub在str中的起始和结束索引，否则返回nil
+function costr.rfind(str, sub, start) end
 
 ------------------------------------------------------------------------------------------------------
 
