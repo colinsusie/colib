@@ -43,7 +43,7 @@
 
 如果你下载过Lua的源代码，并且已经编译和安装到系统中，那么只需要在colib根目录下执行`make`即可。
 
-否则请按下面步骤执行：
+如果编译时出现找不到lua.h的错误，请看下面步骤：
 
 - 下载和编译Lua：
 
@@ -54,14 +54,18 @@ cd lua-5.4.3
 make all test
 ```
 
-Lua版本视你的需求而定，也可到[Lua官网](https://www.lua.org/download.html)查看。
-
 - 编译colib
 
 假设你的Lua代码目录是`/home/colin/lua-5.4.3/src`；进入colib根目录执行：
 
+如果不是FreeBSD：
 ```sh
 make "INC=-I/home/colin/lua-5.4.3/src"
+```
+
+如果是FreeBSD，先安装gmake，然后：
+```sh
+gmake "INC=-I/home/colin/lua-5.4.3/src"
 ```
 
 如无意外，应该可以编译成功，最后colib.so在colib子目录中。
@@ -115,6 +119,7 @@ link /OUT:luac.exe luac._obj lua-static.lib
 - Debian GNU/Linux 8.6 (jessie)
 - Debian GNU/Linux 10 (buster)
 - Ubuntu 20.04.1 LTS
+- FreeBSD 12
 
 ## 待开发的模块
 
