@@ -17,11 +17,13 @@ end
 print("listdir-----------------------")
 print(table.concat(cofilesys.listdir(".."), ", "))
 
-print(cofilesys.exists("test_bitarray.lua"))
-print(cofilesys.getsize("test_weightrand.lua"))
-print(cofilesys.getsize("unknown.lua"))
-print(cofilesys.getmtime("test_weightrand.lua"))
-print(os.date("%c", cofilesys.getmtime("test_weightrand.lua")))
+print("exists", cofilesys.exists("test_bitarray.lua"))
+print("getsize", cofilesys.getsize("test_weightrand.lua"))
+print("getsize", cofilesys.getsize("unknown.lua"))
+print("getmtime", cofilesys.getmtime("test_weightrand.lua"))
+print(os.date("%c", math.floor(cofilesys.getmtime("test_weightrand.lua"))))
+print("getatime", cofilesys.getatime("test_weightrand.lua"))
+print("getctime", cofilesys.getctime("test_weightrand.lua"))
 
 print(cofilesys.getmode("test_list.py"))
 print(string.format("%X", cofilesys.getmode("..")))

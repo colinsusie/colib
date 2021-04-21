@@ -4,6 +4,7 @@
 #define LUA_LIB
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -163,43 +164,107 @@ static int l_getsize(lua_State *L) {
 	}
 }
 
+#ifdef _WIN32
+// 取文件时间
+static int win_getfiletime(const char *path, FILETIME *ftCreate, FILETIME *ftAccess, FILETIME *ftWrite) {
+	HANDLE hFile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		return -1;
+	}
+	if (!GetFileTime(hFile, ftCreate, ftAccess, ftWrite)) {
+		CloseHandle(hFile);
+		return -1;  
+	} else {
+		CloseHandle(hFile);
+		return 0;
+	}
+}
+
+static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
+// 将文件时间转换成秒和纳秒
+static void win_convert_filetime(FILETIME *time_in, time_t *time_out, long* nsec_out) {
+	__int64 in = (int64_t)time_in->dwHighDateTime << 32 | time_in->dwLowDateTime ;
+    *nsec_out = (long)(in % 10000000) * 100; 	/* FILETIME is in units of 100 nsec. */
+    *time_out = (time_t)((in / 10000000) - secs_between_epochs);
+}
+#endif
+
 static int l_getmtime(lua_State *L) {
 	const char *path = luaL_checkstring(L, 1);
+	time_t sec;
+	long nsec;
+#ifdef _WIN32
+	FILETIME ftWrite;
+	if (win_getfiletime(path, NULL, NULL, &ftWrite) != 0) {
+		lua_pushnil(L);
+		lua_pushfstring(L, "getmtime error: %d", GetLastError());
+		return 2;
+	}
+	win_convert_filetime(&ftWrite, &sec, &nsec);
+#else
 	STRUCT_STAT st;
-	if(FUNC_STAT(path, &st) == 0) {
-		lua_pushinteger(L, (lua_Integer)st.st_mtime);
-		return 1;
-	} else {
+	if(FUNC_STAT(path, &st) != 0) {
 		lua_pushnil(L);
 		lua_pushfstring(L, "getmtime error: %s", strerror(errno));
 		return 2;
 	}
+	sec = st.st_mtim.tv_sec;
+	nsec = st.st_mtim.tv_nsec;
+#endif
+	lua_pushnumber(L, (lua_Number)(sec + 1e-9*nsec));
+	return 1;
 }
 
 static int l_getatime(lua_State *L) {
 	const char *path = luaL_checkstring(L, 1);
-	STRUCT_STAT st;
-	if(FUNC_STAT(path, &st) == 0) {
-		lua_pushinteger(L, (lua_Integer)st.st_atime);
-		return 1;
-	} else {
+	time_t sec;
+	long nsec;
+#ifdef _WIN32
+	FILETIME ftAccess;
+	if (win_getfiletime(path, NULL, &ftAccess, NULL) != 0) {
 		lua_pushnil(L);
-		lua_pushfstring(L, "getatime error: %s", strerror(errno));
+		lua_pushfstring(L, "getatime error: %d", GetLastError());
 		return 2;
 	}
+	win_convert_filetime(&ftAccess, &sec, &nsec);
+#else
+	STRUCT_STAT st;
+	if(FUNC_STAT(path, &st) != 0) {
+		lua_pushnil(L);
+		lua_pushfstring(L, "getmtime error: %s", strerror(errno));
+		return 2;
+	}
+	sec = st.st_atim.tv_sec;
+	nsec = st.st_atim.tv_nsec;
+#endif
+	lua_pushnumber(L, (lua_Number)(sec + 1e-9*nsec));
+	return 1;
 }
 
 static int l_getctime(lua_State *L) {
 	const char *path = luaL_checkstring(L, 1);
-	STRUCT_STAT st;
-	if(FUNC_STAT(path, &st) == 0) {
-		lua_pushinteger(L, (lua_Integer)st.st_ctime);
-		return 1;
-	} else {
+	time_t sec;
+	long nsec;
+#ifdef _WIN32
+	FILETIME ftCreate;
+	if (win_getfiletime(path, &ftCreate, NULL, NULL) != 0) {
 		lua_pushnil(L);
-		lua_pushfstring(L, "getctime error: %s", strerror(errno));
+		lua_pushfstring(L, "getatime error: %d", GetLastError());
 		return 2;
 	}
+	win_convert_filetime(&ftCreate, &sec, &nsec);
+#else
+	STRUCT_STAT st;
+	if(FUNC_STAT(path, &st) != 0) {
+		lua_pushnil(L);
+		lua_pushfstring(L, "getmtime error: %s", strerror(errno));
+		return 2;
+	}
+	sec = st.st_ctim.tv_sec;
+	nsec = st.st_ctim.tv_nsec;
+#endif
+	lua_pushnumber(L, (lua_Number)(sec + 1e-9*nsec));
+	return 1;
 }
 
 static int l_getmode(lua_State *L) {
