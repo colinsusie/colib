@@ -164,6 +164,8 @@ static int l_getsize(lua_State *L) {
 	}
 }
 
+///////////////////////////////////////////////////////////////////////
+// 消除一些系统的差异
 #ifdef _WIN32
 // 取文件时间
 static int win_getfiletime(const char *path, FILETIME *ftCreate, FILETIME *ftAccess, FILETIME *ftWrite) {
@@ -187,6 +189,11 @@ static void win_convert_filetime(FILETIME *time_in, time_t *time_out, long* nsec
     *nsec_out = (long)(in % 10000000) * 100; 	/* FILETIME is in units of 100 nsec. */
     *time_out = (time_t)((in / 10000000) - secs_between_epochs);
 }
+#elif __APPLE__
+	#define st_mtim st_atimespec
+	#define st_atim st_mtimespec
+	#define st_ctim st_ctimespec
+#else
 #endif
 
 static int l_getmtime(lua_State *L) {
