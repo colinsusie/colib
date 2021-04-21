@@ -116,10 +116,10 @@ link /OUT:luac.exe luac._obj lua-static.lib
 
 - Windows 10
 - macOS Big Sur 11.2.3
-- Debian GNU/Linux 8.6 (jessie)
 - Debian GNU/Linux 10 (buster)
 - Ubuntu 20.04.1 LTS
 - FreeBSD 12
+- CentOS 8
 
 ## 待开发的模块
 
