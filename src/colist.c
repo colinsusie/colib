@@ -217,7 +217,8 @@ static int list_indexof(lua_State *L) {
 	list_t *ls = checklist(L);
 	lua_getuservalue(L, 1);		// <ls|v|uv>
 	int idx = -1;
-	for (int i = 0; i < ls->size; ++i) {
+	int i;
+	for (i = 0; i < ls->size; ++i) {
 		lua_rawgeti(L, 3, ls->ary[i].ref);	// <ls|v|uv|v>
 		if (lua_compare(L, 2, 4, LUA_OPEQ)) {
 			idx = i;
