@@ -133,7 +133,8 @@ static int queue_totable(lua_State *L) {
 	lua_getuservalue(L, 1);			// q|rt
 	lua_createtable(L, n, 0);		// q|rt|t
 	int ref;
-	for (int i = 0; i < n; ++i) {
+	int i;
+	for (i = 0; i < n; ++i) {
 		ref = q->refs[(q->head + i) % q->size];
 		if (ref == LUA_REFNIL) {
 			lua_pushnil(L);
