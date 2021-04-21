@@ -331,24 +331,40 @@ function cofilesys.scandir(path) end
 
 ---判断文件或目录是否存在
 ---@param path string 路径
+---@return boolean 是否存在
 function cofilesys.exists(path) end
 
 ---获得文件的大小
 ---@param path string 路径
+---@return number 如果成功返回文件大小，否则返回nil, 和错误消息
 function cofilesys.getsize(path) end
 
----取文件的修改时间
+---取文件的修改时间，返回的时间是一个浮点数
 ---@param path string 路径
+---@return number 如果成功返回时间戳，否则返回nil, 和错误消息
 function cofilesys.getmtime(path) end
 
----取文件的访问时间
+---取文件的访问时间，返回的时间是一个浮点数
 ---@param path string 路径
+---@return number 如果成功返回时间戳，否则返回nil, 和错误消息
 function cofilesys.getatime(path) end
 
----取文件的创建时间
+---取文件的创建或状态改变的时间，返回的时间是一个浮点数
 ---@param path string 路径
+---@return number 如果成功返回时间戳，否则返回nil, 和错误消息
 function cofilesys.getctime(path) end
 
 ---取文件的模式
 ---@param path string 路径
+---@return number 如果成功返回文件模式，否则返回nil, 和错误消息
 function cofilesys.getmode(path) end
+
+---创建目录
+---@param path string 路径
+---@return boolean 是否成功，如果失败，后面带有错误消息
+function cofilesys.mkdir(path) end
+
+---删除目录
+---@param path string 路径
+---@return boolean 是否成功，如果失败，后面带有错误消息
+function cofilesys.mkdir(path) end

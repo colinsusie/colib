@@ -19,6 +19,7 @@
 #else
 	#include <dirent.h>
 	#include <sys/types.h>
+	#include <unistd.h>
 #endif // defined(_WIN32)
 
 #ifdef _WIN32
@@ -287,6 +288,37 @@ static int l_getmode(lua_State *L) {
 	}
 }
 
+static int l_mkdir(lua_State *L) {
+	const char *path = luaL_checkstring(L, 1);
+	int err;
+#ifdef _WIN32
+	err = _mkdir(path);
+#else
+	err =  mkdir (path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
+#endif
+	if (err) {
+		lua_pushboolean(L, 0);
+		lua_pushfstring(L, "mkdir error: %s", strerror(errno));
+		return 2;
+	} else {
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+}
+
+static int l_rmdir(lua_State *L) {
+	const char *path = luaL_checkstring(L, 1);
+	int err = rmdir(path);
+	if (err) {
+		lua_pushboolean(L, 0);
+		lua_pushfstring(L, "rmdir error: %s", strerror(errno));
+		return 2;
+	} else {
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+}
+
 static const luaL_Reg dirmt[] = {
 	{"__gc", l_diritr_close},
 	{NULL, NULL}
@@ -300,6 +332,8 @@ static const luaL_Reg lib[] = {
 	{"getatime", l_getatime},
 	{"getctime", l_getctime},
 	{"getmode", l_getmode},
+	{"mkdir", l_mkdir},
+	{"rmdir", l_rmdir},
 	{NULL, NULL}
 };
 

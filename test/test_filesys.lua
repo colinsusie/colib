@@ -31,3 +31,11 @@ print(string.format("%X", cofilesys.getmode("..")))
 print("isdir ..", cofilesys.isdir(".."))
 print("isdir test_list.py", cofilesys.isdir("test_list.py"))
 print("isfile test_list.py", cofilesys.isfile("test_list.py"))
+
+print("mkdir", cofilesys.mkdir("testdir"))
+print("rmdir", cofilesys.rmdir("testdir"))
+print("rmdir", cofilesys.rmdir("testdir2"))
+
+print("mkdir", cofilesys.mkdir("testdir"))
+print("mkdir", cofilesys.mkdir("testdir/testdir"))
+print("rmdir", cofilesys.rmdir("testdir"))
