@@ -34,6 +34,8 @@
     - 一个基于最小堆的定时器实现
 - bitarray对象：
 	- 位数组
+- filesys模块
+	- 常用的文件和目录接口
 
 ## 编译指南
 
@@ -103,6 +105,16 @@ link /OUT:luac.exe luac._obj lua-static.lib
 - apis.lua 和其他lua文件都有详尽的接口说明，建议使用 IDEA + EmmyLua 插件，以获得方便的代码提示。
 - test 目录中是各模块的测试代码，查看这些代码可以了解各模块的使用方法。进入test, 然后执行`lua test_xxx`。
 - 由于本人的精力有限，该库只支持 Lua5.3 以上的版本。
+
+## 系统兼容性
+
+该库只在下面的系统编译通过，其他系统不能保证可以编译
+
+- Windows 10
+- macOS Big Sur 11.2.3
+- Debian GNU/Linux 8.6 (jessie)
+- Debian GNU/Linux 10 (buster)
+- Ubuntu 20.04.1 LTS
 
 ## 待开发的模块
 
