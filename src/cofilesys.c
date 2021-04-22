@@ -23,13 +23,16 @@
 #endif // defined(_WIN32)
 
 #ifdef _WIN32
-	#define SEP '\\'
-	#define ALTSEP '/'
+	#define SEP "\\"
+	#define ALLSEPS "\\/"
 	#define FUNC_STAT _stati64
 	#define STRUCT_STAT struct _stat64 
+	#define chdir(p) _chdir(p)
+	#define getcwd(d, s) _getcwd(d, s)
+	#define rmdir(p) _rmdir(p)
 #else
-	#define SEP '/'
-	#define ALTSEP '/'
+	#define SEP "/"
+	#define ALLSEPS "/"
 	#define FUNC_STAT stat
 	#define STRUCT_STAT struct stat
 #endif // _WIN32
@@ -127,8 +130,8 @@ static int l_scandir(lua_State *L) {
 	itr->path = (char*)co_malloc(pathsz + 5);
 	strncpy(itr->path, path, pathsz);
 	char ch = itr->path[pathsz-1];
-	if (ch != SEP && ch != ALTSEP && ch != ':') 
-		itr->path[pathsz++] = SEP;
+	if (!strchr(ALLSEPS, ch) && ch != ':')
+		itr->path[pathsz++] = SEP[0];
 	itr->path[pathsz++] = L'*';
 	itr->path[pathsz] = '\0';
 	itr->first_time = 1;
@@ -294,7 +297,7 @@ static int l_mkdir(lua_State *L) {
 #ifdef _WIN32
 	err = _mkdir(path);
 #else
-	err =  mkdir (path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
+	err =  mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
 #endif
 	if (err) {
 		lua_pushboolean(L, 0);
@@ -319,6 +322,52 @@ static int l_rmdir(lua_State *L) {
 	}
 }
 
+static int l_chdir(lua_State *L) {
+	const char *path = luaL_checkstring(L, 1);
+	if (chdir(path)) {
+		lua_pushnil (L);
+		lua_pushfstring (L,"chdir error: %s", strerror(errno));
+		return 2;
+	} else {
+		lua_pushboolean (L, 1);
+		return 1;
+	}
+}
+
+static int l_getcwd(lua_State *L) {
+	char path[256];
+	int size = 256;
+	if (getcwd(path, size) != NULL) {
+		lua_pushstring(L, path);
+		return 1;
+	}
+	char *buff = NULL;
+	int result;
+	while (1) {
+		size <<= 1;
+		buff = (char*)co_realloc(buff, size);
+		if (buff == NULL) {
+			lua_pushnil(L);
+			lua_pushfstring(L, "getcwd error: realloc() failed");
+			result = 2;
+			break;
+		}
+		if (getcwd(buff, size) != NULL) {
+			lua_pushstring(L, buff);
+			result = 1;
+			break;
+		}
+		if (errno != ERANGE) {
+			lua_pushnil(L);
+			lua_pushfstring(L, "getcwd error: %s", strerror(errno));
+			result = 2;
+			break;
+		}
+	}
+	co_free(buff);
+	return result;
+}
+
 static const luaL_Reg dirmt[] = {
 	{"__gc", l_diritr_close},
 	{NULL, NULL}
@@ -334,9 +383,21 @@ static const luaL_Reg lib[] = {
 	{"getmode", l_getmode},
 	{"mkdir", l_mkdir},
 	{"rmdir", l_rmdir},
+	{"chdir", l_chdir},
+	{"getcwd", l_getcwd},
 	{NULL, NULL}
 };
 
+static void init_consts(lua_State *L) {
+	lua_pushliteral(L, SEP);
+	lua_setfield(L, -2, "sep");
+	lua_pushliteral(L, ALLSEPS);
+	lua_setfield(L, -2, "allseps");
+#ifdef _WIN32
+	lua_pushboolean(L, 1);
+	lua_setfield(L, -2, "iswindows");
+#endif
+}
 
 LUAMOD_API int luaopen_colib_filesys(lua_State *L) {
 	luaL_checkversion(L);
@@ -344,5 +405,6 @@ LUAMOD_API int luaopen_colib_filesys(lua_State *L) {
 	luaL_setfuncs(L, dirmt, 0);
 
 	luaL_newlib(L, lib);
+	init_consts(L);
 	return 1;
-} 
+}

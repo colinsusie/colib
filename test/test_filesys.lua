@@ -39,3 +39,20 @@ print("isfile test_list.py", cofilesys.isfile("test_list.py"))
 -- print("mkdir", cofilesys.mkdir("testdir"))
 -- print("mkdir", cofilesys.mkdir("testdir/testdir"))
 -- print("rmdir", cofilesys.rmdir("testdir"))
+
+print("split", cofilesys.splitext("/home/colin/tsconfig.json"))
+print("split", cofilesys.splitext("/home/colin/tsconfig..ext"))
+print("split", cofilesys.splitext("/home/colin/tsconfig"))
+print("split", cofilesys.splitext("."))
+
+print("chgext", cofilesys.chgext("test.lua", ".luac"))
+print("chgext", cofilesys.chgext("test", ".luac"))
+
+
+-- print("split", cofilesys.split("aaabbb/abc.a"))
+-- print("split", cofilesys.split("aaabbb///abc.a"))
+-- print("split", cofilesys.split("/abc.a"))
+
+print("getcwd", cofilesys.getcwd())
+print("chdir", cofilesys.chdir(".."))
+print("getcwd", cofilesys.getcwd())

@@ -226,22 +226,35 @@ static int l_rfind(lua_State *L) {
 	size_t strsz;
 	const char *str = luaL_checklstring(L, 1, &strsz);
 	if (strsz == 0) {
-		luaL_pushfail(L);
+		lua_pushinteger(L, 0);
 		return 1;
 	}
 	size_t subsz;
 	const char *sub = luaL_checklstring(L, 2, &subsz);
 	if (subsz == 0) {
-		luaL_pushfail(L);
+		lua_pushinteger(L, 0);
 		return 1;
 	}
-	size_t size = postoindex(luaL_optinteger(L, 3, strsz), strsz) + 1;
+	int matchchar = lua_toboolean(L, 3);
+	size_t size = postoindex(luaL_optinteger(L, 4, strsz), strsz) + 1;
 	if (subsz > size) {
-		luaL_pushfail(L);
+		lua_pushinteger(L, 0);
 		return 1;
 	}
 	char ch = sub[0];
-	if (subsz == 1) {
+	if (matchchar) {
+		size_t i = size;
+		const char *p = str + i - 1;
+		const char *m;
+		for (; i > 0; --i, --p) {
+			m = memchr(sub, *p, subsz);
+			if (m) {
+				lua_pushinteger(L, i);
+				lua_pushlstring(L, m, 1);
+				return 2;
+			}
+		}
+	} else if (subsz == 1) {
 		size_t i = size;
 		const char *p = str + i - 1;
 		for (; i > 0; --i, --p) {
@@ -251,7 +264,7 @@ static int l_rfind(lua_State *L) {
 				return 2;
 			}
 		}
-	} else {
+	}  else {
 		size_t i = size - subsz + 1;
 		const char *p = str + i - 1;
 		for (; i > 0; --i, --p) {
@@ -262,7 +275,7 @@ static int l_rfind(lua_State *L) {
 			}
 		}
 	}
-	luaL_pushfail(L);
+	lua_pushinteger(L, 0);
 	return 1;
 }
 

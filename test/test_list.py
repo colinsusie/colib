@@ -79,3 +79,6 @@ test3()
 test4()
 test5()
 test6()
+
+import os
+os.path.basename()

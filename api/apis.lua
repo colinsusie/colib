@@ -240,16 +240,22 @@ function costr.strip(str, chars) end
 ---@param str string 源字符串
 ---@param sep string 分隔串，比如, = <>等等
 ---@param matchchar boolean 如果为true，sep表示字符集合，只要匹配到集合中的任意字符都算命中；
----	否则为一个字符串，只有匹配到整个字符串才算命中。
+---		否则为一个字符串，只有匹配到整个字符串才算命中。
 ---@return string[] 返回分隔后的字符串列表
 function costr.split(str, sep, matchchar) end
 
 ---从后往前查找子字符串
 ---@param str string 源字符串
 ---@param sub string 子字符串
+---@param matchchar boolean 如果为true，sub表示字符集合，只要匹配到集合中的任意字符都算命中；
+---		否则为一个字符串，只有匹配到整个字符串才算命中。
 ---@param start number 开始查找的位置，默认是#str
----@return number, number 如果找到，返回sub在str中的起始和结束索引，否则返回nil
-function costr.rfind(str, sub, start) end
+---@return number, number 如果找到：
+---		找不到返回 0
+---		matchchar=false：返回sub在str中的起始和结束索引。
+---		matchchar=true: 返回找到的索引，以及匹配到的字符。
+function costr.rfind(str, sub, matchchar, start) end
+
 
 ------------------------------------------------------------------------------------------------------
 
@@ -326,6 +332,9 @@ function cobitarray.wordbits(obj) end
 ------------------------------------------------------------------------------------------------------
 
 ---@class cofilesys 文件系统模块
+---@field sep string 路径分隔符，Windows下为 \, 其他为 /
+---@field allseps string 所有有效的分隔符，Windows下为 \/，其他系统只有 /
+---@field iswindows boolean  是否在Windows平台，Windows的路径和其他系统不一样
 local cofilesys = {}
 
 ---扫描目录，返回一个迭代器，用在for循环中，不会包含 . 和 .. 两个特殊目录
@@ -370,4 +379,13 @@ function cofilesys.mkdir(path) end
 ---删除目录
 ---@param path string 路径
 ---@return boolean 是否成功，如果失败，后面带有错误消息
-function cofilesys.mkdir(path) end
+function cofilesys.rmdir(path) end
+
+---修改工作目录
+---@param path string 路径
+---@return boolean 是否修改成功，如果失败，后面带有错误消息
+function cofilesys.chdir(path) end
+
+---取当前工作目录
+---@return string 返回工作目录，如果失败返回nil和一个错误消息
+function cofilesys.getcwd() end
