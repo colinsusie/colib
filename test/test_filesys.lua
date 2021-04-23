@@ -49,10 +49,34 @@ print("chgext", cofilesys.chgext("test.lua", ".luac"))
 print("chgext", cofilesys.chgext("test", ".luac"))
 
 
--- print("split", cofilesys.split("aaabbb/abc.a"))
--- print("split", cofilesys.split("aaabbb///abc.a"))
--- print("split", cofilesys.split("/abc.a"))
+ print("split", cofilesys.split("aaabbb/abc.a"))
+ print("split", cofilesys.split("aaabbb///abc.a"))
+ print("split", cofilesys.split("/abc.a"))
 
 print("getcwd", cofilesys.getcwd())
 print("chdir", cofilesys.chdir(".."))
 print("getcwd", cofilesys.getcwd())
+
+print("join", cofilesys.join("aaa", "bbb", "ccc.txt"))
+print("join", cofilesys.join("aaa", "/bbb", "/ccc.txt"))
+print("join", cofilesys.join("aaa/", "bbb/", "ccc.txt"))
+
+print("isabs", cofilesys.isabs("/aa/bb"))
+print("isabs", cofilesys.isabs("aa/bb"))
+
+print("abspath", cofilesys.abspath("bbb.txt"))
+print("abspath", cofilesys.abspath("bbb/ccc.txt"))
+print("abspath", cofilesys.abspath("/aaa/bbb/ccc.txt"))
+
+print("normpath", cofilesys.normpath("/aa/./bb//cc/../dd.txt"))
+print("normpath", cofilesys.normpath("../../aa.txt"))
+print("normpath", cofilesys.normpath("/../../aa.txt"))
+print("normpath", cofilesys.normpath("/aa/../bb.txt"))
+
+
+--print("splitdrive", cofilesys.splitdrive("C:\\aa\\bb\\cc"))
+--print("splitdrive", cofilesys.splitdrive("\\\\aa\\bb\\cc"))
+-- print("isabs", cofilesys.isabs("C:\\aa\\b\\c"))
+-- print("isabs", cofilesys.isabs("C:/aa\\b\\c"))
+-- print("isabs", cofilesys.isabs("aa\\b\\c"))
+-- print("split", cofilesys.split("C:\\aa\\bb\\cc"))

@@ -3,6 +3,10 @@ local cofilesys = require "colib.filesys"
 local costr = require "colib.str"
 local strsub = string.sub
 local strrep = string.rep
+local strgsub = string.gsub
+local strbyte = string.byte
+local ipairs = ipairs
+local tconcat = table.concat
 
 local S_IFMT   = 0xF000		---File type mask
 
@@ -72,26 +76,63 @@ function cofilesys.chgext(path, ext)
 	return root .. ext
 end
 
+------------------------------------------------------------------------------------------
+-- windows: 规则太多太Ugly，暂时不想处理
+
+local function _win_splitdrive(path)
+	if #path > 2 then
+		local normp = strgsub(path, "/", "\\")
+		local c1, c2, c3 = strbyte(normp, 1, 3)
+		-- UNC \\machine\mountpoint\directory\etc\...
+		if c1 == 92 and c2 == 92 and c3 ~= 92 then	-- 92 = '\'
+			local index = normp:find("\\", 3, true)
+			if not index then
+				return "", path
+			end
+			local index2 = normp:find("\\", index+1, true) or #path
+			if index2 == index +1 then
+				return "", path
+			end
+			return strsub(path, 1, index2), strsub(path, index2+1)
+		end
+		if strbyte(normp, 2) == 58 then	-- 58 == ':'
+			return strsub(path, 1, 2), strsub(path, 3)
+		end
+	end
+	return "", path
+end
+
 local function _win_split(path)
-	error("comming soon")
+	local d, p = _win_splitdrive(path)
+	print(d, p)
+	local i = costr.rfind(p, allseps, true) + 1
+	local head, tail = strsub(p, 1, i-1), strsub(p, i)
+	local nhead = costr.rstrip(head, allseps)
+	if nhead == "" then
+		nhead = head
+	end
+	return d .. head, tail
 end
 
 local function _win_join(path, ...)
-	error("comming soon")
+	-- TODO
 end
 
 local function _win_isabs(path)
-	error("comming soon")
+	local _, dir = _win_splitdrive(path)
+	return dir:find("^[\\/]") ~= nil
 end
 
 local function _win_abspath(path)
-	error("comming soon")
+	-- TODO
 end
 
 local function _win_normpath(path)
-	error("comming soon")
+	-- TODO
 end
 
+------------------------------------------------------------------------------------------
+-- posix
 
 local function _posix_split(path)
 	local i = costr.rfind(path, sep) + 1
@@ -103,19 +144,66 @@ local function _posix_split(path)
 end
 
 local function _posix_join(path, ...)
-	error("comming soon")
+	local t = {...}
+	for i, b in ipairs(t) do
+		if costr.startswith(b, "/") then
+			path = b
+		elseif path == '' or costr.endswith(path, "/") then
+			path = path .. b
+		else
+			path = path .. "/" .. b
+		end
+	end
+	return path
 end
 
 local function _posix_isabs(path)
-	error("comming soon")
-end
-
-local function _posix_abspath(path)
-	error("comming soon")
+	return costr.startswith(path, "/")
 end
 
 local function _posix_normpath(path)
-	error("comming soon")
+	if path == "" then
+		return "."
+	end
+	local init_slashes = costr.startswith(path, "/")
+	if init_slashes then
+		-- POSIX allows one or two initial slashes, but treats three or more as single slash.
+		if costr.startswith(path, "//") and not costr.startswith(path, "///") then
+			init_slashes = 2
+		else
+			init_slashes = 1
+		end
+	end
+	local comps = costr.split(path, "/")
+	local newcomps = {}
+	local n
+	for _, comp in ipairs(comps) do
+		n = #newcomps
+		if comp ~= "" and comp ~= "." then
+			if (comp ~= "..") or (not init_slashes and n == 0) or (n > 0 and newcomps[n] == "..") then
+				newcomps[n+1] = comp
+			elseif n > 0 then
+				newcomps[n] = nil
+			end
+		end
+	end
+	path = tconcat(newcomps, "/")
+	if init_slashes then
+		path = strrep("/", init_slashes) .. path
+	end
+	return path == "" and "." or path
+end
+
+local function _posix_abspath(path)
+	if not _posix_isabs(path) then
+		local cwd = cofilesys.getcwd()
+		path = _posix_join(cwd, path)
+	end
+	return _posix_normpath(path)
+end
+
+local function _posix_splitdrive(path)
+	return "", path
 end
 
 
@@ -129,17 +217,29 @@ if iswindows then
 	---@param path string 路径
 	---@return string,string
 	cofilesys.split = _win_split
-
+	---连接路径，如 join("aaa", "bbb", "ccc.txt") => aaa/bbb/ccc.txt
+	---@param path string 路径
+	---@vararg string[] 连接的各个路径部分
 	cofilesys.join = _win_join
+	---判断路径是否是绝对路径
+	---@param path string 路径
 	cofilesys.isabs = _win_isabs
+	---返回绝对路径，相对于当前工作目录的
+	---@param path string 路径
 	cofilesys.abspath = _win_abspath
+	---规范化路径，如 A//B, A/./B 和 A/foo/../B 全部变成 A/B.
+	------@param path string 路径
 	cofilesys.normpath = _win_normpath
+	---分隔盘符和路径，只有Windows有用，其他系统盘符为空
+	---如： C:\aa\bb => C:  \aa\bb
+	cofilesys.splitdrive = _win_splitdrive
 else
 	cofilesys.split = _posix_split
 	cofilesys.join = _posix_join
 	cofilesys.isabs = _posix_isabs
 	cofilesys.abspath = _posix_abspath
 	cofilesys.normpath = _posix_normpath
+	cofilesys.splitdrive = _posix_splitdrive
 
 	-- TODO:
 	-- walk
