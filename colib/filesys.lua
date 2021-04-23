@@ -8,7 +8,7 @@ local strbyte = string.byte
 local ipairs = ipairs
 local tconcat = table.concat
 
-local S_IFMT   = 0xF000		---File type mask
+local S_IFMT   = 0xF000			---File type mask
 
 -- 各种文件类型
 cofilesys.S_IFIFO  = 0x1000		---FIFO
