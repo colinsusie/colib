@@ -61,7 +61,7 @@ end
 ---@return string, string 返回root和ext两部分
 function cofilesys.splitext(path)
 	local doti = costr.rfind(path, ".")
-	if doti ~= 0 then
+	if doti then
 		return strsub(path, 1, doti-1), strsub(path, doti)
 	end
 	return path, ""
@@ -77,7 +77,7 @@ function cofilesys.chgext(path, ext)
 end
 
 ------------------------------------------------------------------------------------------
--- windows: 规则太多太Ugly，暂时不想处理
+-- windows: 规则太多太ugly
 
 local function _win_splitdrive(path)
 	if #path > 2 then
@@ -104,18 +104,58 @@ end
 
 local function _win_split(path)
 	local d, p = _win_splitdrive(path)
-	print(d, p)
-	local i = costr.rfind(p, allseps, true) + 1
+	local i = (costr.rfind(p, allseps, true) or 0) + 1
 	local head, tail = strsub(p, 1, i-1), strsub(p, i)
 	local nhead = costr.rstrip(head, allseps)
 	if nhead == "" then
 		nhead = head
 	end
-	return d .. head, tail
+	return d .. nhead, tail
+end
+
+local function _win_normpath(path)
+	if costr.startswith(path, "\\\\.\\") or costr.startswith(path, "\\\\?\\") then
+		return path
+	end
+	path = strgsub(path, "/", "\\")
+	local d, p = _win_splitdrive(path)
+	if costr.startswith(p, "\\") then
+		d = d .. "\\"
+		p = costr.lstrip(p, "\\")
+	end
+
+	local comps = costr.split(p, "\\")
+	local newcomps = {}
+	local n
+	for _, comp in ipairs(comps) do
+		n = #newcomps
+		if comp ~= "" and comp ~= "." then
+			if (comp ~= "..") or (n > 0 and newcomps[n] == "..") or 
+				(n == 0 and not costr.endswith(d, "\\")) then
+				newcomps[n+1] = comp
+			elseif n > 0 and newcomps[n] ~= ".." then
+				newcomps[n] = nil
+			end
+		end
+	end
+	if d == "" and #newcomps == 0 then
+		return "."
+	else
+		return d .. tconcat(newcomps, "\\")
+	end
 end
 
 local function _win_join(path, ...)
-	-- TODO
+	local t = {...}
+	local rdrive, rpath = _win_splitdrive(path)
+	for _, p in ipairs(t) do
+		if rpath == "" or costr.endswith(rpath, "\\") or costr.endswith(rpath, "/") then
+			rpath = rpath .. p
+		else
+			rpath = rpath .. "\\" .. p
+		end
+	end
+	return rdrive .. rpath
 end
 
 local function _win_isabs(path)
@@ -124,18 +164,18 @@ local function _win_isabs(path)
 end
 
 local function _win_abspath(path)
-	-- TODO
-end
-
-local function _win_normpath(path)
-	-- TODO
+	if not _win_isabs(path) then
+		local cwd = cofilesys.getcwd()
+		path = _win_join(cwd, path)
+	end
+	return _win_normpath(path)
 end
 
 ------------------------------------------------------------------------------------------
 -- posix
 
 local function _posix_split(path)
-	local i = costr.rfind(path, sep) + 1
+	local i = (costr.rfind(path, sep) or 0) + 1
 	local head, tail = strsub(path, 1, i-1), strsub(path, i)
 	if head ~= "" and head ~= strrep(sep, #head) then
 		head = costr.rstrip(head, sep)
@@ -145,13 +185,11 @@ end
 
 local function _posix_join(path, ...)
 	local t = {...}
-	for i, b in ipairs(t) do
-		if costr.startswith(b, "/") then
-			path = b
-		elseif path == '' or costr.endswith(path, "/") then
-			path = path .. b
+	for _, p in ipairs(t) do
+		if path == '' or costr.endswith(path, "/") then
+			path = path .. p
 		else
-			path = path .. "/" .. b
+			path = path .. "/" .. p
 		end
 	end
 	return path

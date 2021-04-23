@@ -226,19 +226,19 @@ static int l_rfind(lua_State *L) {
 	size_t strsz;
 	const char *str = luaL_checklstring(L, 1, &strsz);
 	if (strsz == 0) {
-		lua_pushinteger(L, 0);
+		lua_pushnil(L);
 		return 1;
 	}
 	size_t subsz;
 	const char *sub = luaL_checklstring(L, 2, &subsz);
 	if (subsz == 0) {
-		lua_pushinteger(L, 0);
+		lua_pushnil(L);
 		return 1;
 	}
 	int matchchar = lua_toboolean(L, 3);
 	size_t size = postoindex(luaL_optinteger(L, 4, strsz), strsz) + 1;
 	if (subsz > size) {
-		lua_pushinteger(L, 0);
+		lua_pushnil(L);
 		return 1;
 	}
 	char ch = sub[0];
@@ -275,7 +275,7 @@ static int l_rfind(lua_State *L) {
 			}
 		}
 	}
-	lua_pushinteger(L, 0);
+	lua_pushnil(L);
 	return 1;
 }
 

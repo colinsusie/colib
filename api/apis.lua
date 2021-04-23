@@ -251,7 +251,7 @@ function costr.split(str, sep, matchchar) end
 ---		否则为一个字符串，只有匹配到整个字符串才算命中。
 ---@param start number 开始查找的位置，默认是#str
 ---@return number, number 如果找到：
----		找不到返回 0
+---		找不到返回 nil
 ---		matchchar=false：返回sub在str中的起始和结束索引。
 ---		matchchar=true: 返回找到的索引，以及匹配到的字符。
 function costr.rfind(str, sub, matchchar, start) end
