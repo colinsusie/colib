@@ -124,4 +124,3 @@ link /OUT:luac.exe luac._obj lua-static.lib
 ## 待开发的模块
 
 - Skiplist：跳表
-- filesys： 文件系统模块：查看文件属性，判断文件类型，增加目录，删除目录，遍历目录，文件路径操作 
