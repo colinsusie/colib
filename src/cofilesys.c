@@ -26,6 +26,7 @@
 	#define SEP "\\"
 	#define ALLSEPS "\\/"
 	#define FUNC_STAT _stati64
+	#define FUNC_LSTAT FUNC_STAT
 	#define STRUCT_STAT struct _stat64 
 	#define chdir(p) _chdir(p)
 	#define getcwd(d, s) _getcwd(d, s)
@@ -34,6 +35,7 @@
 	#define SEP "/"
 	#define ALLSEPS "/"
 	#define FUNC_STAT stat
+	#define FUNC_LSTAT lstat
 	#define STRUCT_STAT struct stat
 #endif // _WIN32
 
@@ -291,6 +293,19 @@ static int l_getmode(lua_State *L) {
 	}
 }
 
+static int l_getlinkmode(lua_State *L) {
+	const char *path = luaL_checkstring(L, 1);
+	STRUCT_STAT st;
+	if(FUNC_LSTAT(path, &st) == 0) {
+		lua_pushinteger(L, (lua_Integer)st.st_mode);
+		return 1;
+	} else {
+		lua_pushnil(L);
+		lua_pushfstring(L, "getlinkmode error: %s", strerror(errno));
+		return 2;
+	}
+}
+
 static int l_mkdir(lua_State *L) {
 	const char *path = luaL_checkstring(L, 1);
 	int err;
@@ -381,6 +396,7 @@ static const luaL_Reg lib[] = {
 	{"getatime", l_getatime},
 	{"getctime", l_getctime},
 	{"getmode", l_getmode},
+	{"getlinkmode", l_getlinkmode},
 	{"mkdir", l_mkdir},
 	{"rmdir", l_rmdir},
 	{"chdir", l_chdir},

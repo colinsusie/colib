@@ -5,6 +5,8 @@ local strsub = string.sub
 local strrep = string.rep
 local strgsub = string.gsub
 local strbyte = string.byte
+local strformat = string.format
+local strfind = string.find
 local ipairs = ipairs
 local tconcat = table.concat
 
@@ -18,6 +20,7 @@ cofilesys.S_IFBLK  = 0x6000		---Block device
 cofilesys.S_IFREG  = 0x8000		---Regular file
 cofilesys.S_IFLNK  = 0xA000		---Symbolic link
 cofilesys.S_IFSOCK = 0xC000		---Socket
+
 
 ---分隔符
 local sep = cofilesys.sep
@@ -37,6 +40,44 @@ function cofilesys.listdir(path)
 	return ls
 end
 
+local function _do_getfiles(root, relpath, searchsubdir, filterfunc, flist)
+	local ftype, fullpath, filepath
+	for filename in cofilesys.scandir(root .. relpath) do
+		filepath = relpath .. filename
+		fullpath = root .. filepath
+		ftype = cofilesys.filetype(fullpath)
+		if ftype == cofilesys.S_IFDIR then
+			if searchsubdir then
+				_do_getfiles(root, relpath .. filename .. sep, searchsubdir, filterfunc, flist)
+			end
+		elseif ftype == cofilesys.S_IFREG then
+			if filterfunc then
+				filepath = filterfunc(root, filepath)
+				if filepath then
+					flist[#flist+1] = filepath
+				end
+			else
+				flist[#flist+1] = filepath
+			end
+		end
+	end
+end
+
+---返回root目录下的普通文件列表，不包含其他类型的文件，不处理符号链接
+---@param path string 根目录
+---@param searchsubdir boolean 是否搜索子目录
+---@param fiterfunc fun(root: string, filepath: string): string 过滤函数
+---		root 是getfiles传入的根目录
+---		filepath 是相对于root的文件路径
+---		如果返回nil则过滤掉，否则返回的文件名将加入列表
+---@return string[] 返回文件路径列表，默认文件路径是相对于root的路径
+function cofilesys.getfiles(root, searchsubdir, filterfunc)
+	root = cofilesys.addslash(root)
+	local flist = {}
+	_do_getfiles(root, "", searchsubdir, filterfunc, flist)
+	return flist
+end
+
 ---检查路径是否是目录
 function cofilesys.isdir(path)
 	local mode = cofilesys.getmode(path)
@@ -49,10 +90,16 @@ function cofilesys.isfile(path)
 	if mode then return (mode & S_IFMT) == cofilesys.S_IFREG end
 end
 
+---检查路径是否是一个链接
+function cofilesys.islink(path)
+	local mode = cofilesys.getlinkmode(path)
+	if mode then return (mode & S_IFMT) == cofilesys.S_IFLNK end
+end
+
 ---取文件的类型: cofilesys.S_IFIFO...
 function cofilesys.filetype(path)
 	local mode = cofilesys.getmode(path)
-	return mode & S_IFMT
+	if mode then return mode & S_IFMT else return 0 end
 end
 
 ---分隔路径的扩展名，返回root和ext两部分，root + ext = path
@@ -74,6 +121,22 @@ end
 function cofilesys.chgext(path, ext)
 	local root, _ = cofilesys.splitext(path)
 	return root .. ext
+end
+
+---给路径最后加上斜杆，Windows加\, 其他加/
+---@param path string 路径
+function cofilesys.addslash(path)
+	local last = strsub(path, -1)
+	if not strfind(allseps, last, 1, true) then
+		path = path .. sep
+	end
+	return path
+end
+
+---删除路径最后的斜杆
+---@param path string 路径
+function cofilesys.delslash(path)
+	return costr.rstrip(path, allseps)
 end
 
 ------------------------------------------------------------------------------------------
@@ -278,12 +341,34 @@ else
 	cofilesys.abspath = _posix_abspath
 	cofilesys.normpath = _posix_normpath
 	cofilesys.splitdrive = _posix_splitdrive
+end
 
-	-- TODO:
-	-- walk
-	-- mkdirs
-	-- rmtree
-	-- ...
+---创建路径中所有不存在的目录
+---@param path string 路径
+---@return boolean
+function cofilesys.mkdirs(path)
+	path = cofilesys.normpath(path)
+	if path == "." then
+		return true
+	end
+	local p = path
+	local paths = {}
+	while p ~= "" and not cofilesys.exists(p) do
+		paths[#paths+1] = p
+		p, _ = cofilesys.split(p)
+	end
+	if p ~= "" and not cofilesys.isdir(p) then
+		return false, strformat("%s is not directory", p)
+	end
+	local ok, err
+	for i = #paths, 1, -1 do
+		p = paths[i]
+		ok, err = cofilesys.mkdir(p)
+		if not ok then
+			return ok, err
+		end
+	end
+	return true
 end
 
 return cofilesys

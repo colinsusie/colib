@@ -8,6 +8,7 @@ package.path = package.path ..";../colib/?.lua"
 
 
 local cofilesys = require "filesys"
+local costr = require "str"
 
 print("scandir-----------------------")
 for name, err in cofilesys.scandir(".") do
@@ -53,9 +54,9 @@ print("chgext", cofilesys.chgext("test", ".luac"))
  print("split", cofilesys.split("aaabbb///abc.a"))
  print("split", cofilesys.split("/abc.a"))
 
-print("getcwd", cofilesys.getcwd())
-print("chdir", cofilesys.chdir(".."))
-print("getcwd", cofilesys.getcwd())
+--print("getcwd", cofilesys.getcwd())
+--print("chdir", cofilesys.chdir(".."))
+--print("getcwd", cofilesys.getcwd())
 
 print("join", cofilesys.join("aaa", "bbb", "ccc.txt"))
 print("join", cofilesys.join("aaa", "/bbb", "/ccc.txt"))
@@ -73,18 +74,32 @@ print("normpath", cofilesys.normpath("../../aa.txt"))
 print("normpath", cofilesys.normpath("/../../aa.txt"))
 print("normpath", cofilesys.normpath("/aa/../bb.txt"))
 print("normpath", cofilesys.normpath("../../bb/../cc"))
+print("normpath", cofilesys.normpath("/aa/./bb/cc/"))
+print("normpath", cofilesys.normpath("/."))
 
 
-print("splitdrive", cofilesys.splitdrive("C:\\aa\\bb\\cc"))
-print("splitdrive", cofilesys.splitdrive("\\\\aa\\bb\\cc"))
-print("isabs", cofilesys.isabs("C:\\aa\\b\\c"))
-print("isabs", cofilesys.isabs("C:/aa\\b\\c"))
-print("isabs", cofilesys.isabs("aa\\b\\c"))
-print("split", cofilesys.split("C:\\aa\\bb\\cc"))
-print("split", cofilesys.split("C:\\a\\\\/cc"))
-print("normpath", cofilesys.normpath("C:\\a\\b/c"))
-print("normpath", cofilesys.normpath("C:\\a/../b/c"))
-print("normpath", cofilesys.normpath("C:\\../../b/c"))
-print("normpath", cofilesys.normpath("../../b/c"))
-print("normpath", cofilesys.normpath("../../b/../c"))
-print("join", cofilesys.join("aa\\bb\\cc\\", "dd", "ee"))
+-- print("splitdrive", cofilesys.splitdrive("C:\\aa\\bb\\cc"))
+-- print("splitdrive", cofilesys.splitdrive("\\\\aa\\bb\\cc"))
+-- print("isabs", cofilesys.isabs("C:\\aa\\b\\c"))
+-- print("isabs", cofilesys.isabs("C:/aa\\b\\c"))
+-- print("isabs", cofilesys.isabs("aa\\b\\c"))
+-- print("split", cofilesys.split("C:\\aa\\bb\\cc"))
+-- print("split", cofilesys.split("C:\\a\\\\/cc"))
+-- print("normpath", cofilesys.normpath("C:\\a\\b/c"))
+-- print("normpath", cofilesys.normpath("C:\\a/../b/c"))
+-- print("normpath", cofilesys.normpath("C:\\../../b/c"))
+-- print("normpath", cofilesys.normpath("../../b/c"))
+-- print("normpath", cofilesys.normpath("../../b/../c"))
+-- print("join", cofilesys.join("aa\\bb\\cc\\", "dd", "ee"))
+--print("mkdirs", cofilesys.mkdirs("dir1/dir2/dir3"))
+
+local list = cofilesys.getfiles(".", true)
+print(table.concat(list, ", "))
+list = cofilesys.getfiles(".")
+print(table.concat(list, ", "))
+list = cofilesys.getfiles(".", true, function(root, filepath)
+	if costr.endswith(filepath, ".py") then
+		return filepath
+	end
+end)
+print(table.concat(list, ", "))
