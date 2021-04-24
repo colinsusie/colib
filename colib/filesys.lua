@@ -347,7 +347,7 @@ end
 ---@param path string 路径
 ---@return boolean
 function cofilesys.mkdirs(path)
-	path = cofilesys.normpath(path)
+	path = cofilesys.abspath(path)
 	if path == "." then
 		return true
 	end

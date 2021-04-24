@@ -91,7 +91,7 @@ print("normpath", cofilesys.normpath("/."))
 -- print("normpath", cofilesys.normpath("../../b/c"))
 -- print("normpath", cofilesys.normpath("../../b/../c"))
 -- print("join", cofilesys.join("aa\\bb\\cc\\", "dd", "ee"))
---print("mkdirs", cofilesys.mkdirs("dir1/dir2/dir3"))
+--print("mkdirs", cofilesys.mkdirs("dir1/dir2/../dir3"))
 
 local list = cofilesys.getfiles(".", true)
 print(table.concat(list, ", "))
