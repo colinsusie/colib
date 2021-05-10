@@ -389,3 +389,67 @@ function cofilesys.chdir(path) end
 ---取当前工作目录
 ---@return string 返回工作目录，如果失败返回nil和一个错误消息
 function cofilesys.getcwd() end
+
+
+------------------------------------------------------------------------------------------------------
+
+---@class cooset 有序集合模块
+local cocoset = {}
+
+---创建一个有序集合
+---@return coosetobj
+function cocoset.new() end
+
+---@class coosetobj 有序集合对象
+local coosetobj = {}
+
+---取集合长度
+---@return number
+function coosetobj:getlen() end
+
+---增加元素
+---@param value any 除了nil外的其他值
+---@param score number 分数，是一个整型，分数越大越在前面
+---@return boolean 是否增加成功，值重复时失败
+function coosetobj:add(value, score) end
+
+---删除元素
+---@param value any 除了nil外的其他值
+---@return boolean 是否成功，值没有在集中时失败
+function coosetobj:remove(value) end
+
+---更新元素的分数
+---@param value any 除了nil外的其他值
+---@param newscore number 新的分数
+---@return boolean 是否成功，值没有在集中时失败
+function coosetobj:update(value, newscore) end
+
+---通过值取信息，排名从1开始算
+---@param value any 除了nil外的其他值
+---@return number, number, number 找不到返回nil，成功返回三元组：排名，值，分数
+function coosetobj:getbyvalue(value) end
+
+---通过排名取信息，排名从1开始算
+---@param rank number 排名值
+---@return number, number, number 找不到返回nil，成功返回三元组：排名，值，分数
+function coosetobj:getbyrank(rank) end
+
+---通过分数取信息，排名从1开始算，总是找到排名最前的分数
+---@param score number 分数
+---@return number, number, number 找不到返回nil，成功返回三元组：排名，值，分数
+function coosetobj:getbyscore(score) end
+
+---返回排名在rank处的迭代器，用在for循环中： for rank, value, score in obj:itrbyrank(1) ... end
+---如果不指定rank，则从第1名开始迭代
+function coosetobj:itrbyrank(rank) end
+
+---返回分数在score处的迭代器，用在for循环中： for rank, value, score in obj:itrbscore(1) ... end
+---如果不指定score，则从第1名开始迭代
+function coosetobj:itrbyscore(score) end
+
+---返回value处的迭代器，用在for循环中： for rank, value, score in obj:itrbvalue(1) ... end
+---如果不指定value，则从第1名开始迭代
+function coosetobj:itrbyvalue(value) end
+
+---打印集合的内容
+function coosetobj:dump() end
