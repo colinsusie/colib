@@ -512,7 +512,7 @@ static inline void _print_chars(int c, int count, int newline) {
 }
 
 static inline void _print_span(size_t span) {
-	printf("[%3lu]", span);
+	printf("[%3zu]", span);
 	if (span > 0) {
 		size_t count = span * 3 + (span-1) * 5; 
 		_print_chars('-', count - 1, 0);
@@ -521,7 +521,7 @@ static inline void _print_span(size_t span) {
 }
 
 static inline void _print_rank(size_t rank) {
-	printf("%-5lu", rank);
+	printf("%-5zu", rank);
 	printf("   ");
 }
 
@@ -549,7 +549,7 @@ static int oset_dump(lua_State *L) {
 	oset_t *oset = to_ordered_set(L);
 	int verb = luaL_optinteger(L, 2, 3);
 	size_t len = oset->length;
-	printf("length: %lu, level: %d\n", len, oset->level);
+	printf("length: %zu, level: %d\n", len, oset->level);
 	if (verb <= 1) return 0;
 
 	_print_chars('=', len * 3 + (len + 1) * 5, 1);
