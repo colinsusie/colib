@@ -13,13 +13,13 @@ local dbg = require "dbg"
 if true then
 	local set = oset.new()
 	print("set: ", set)
-	for i = 1, 20 do
+	for i = 1, 10 do
 		set:add("id"..i, math.random(1, 50))
 	end
 	set:dump()
 end
 
-if true then
+if false then
 	print("delete value======================================")
 	local set = oset.new()
 	set:add("id1", 1)
@@ -48,7 +48,7 @@ if true then
 	set:dump()
 end
 
-if true then
+if false then
 	print("update score======================================")
 	local set = oset.new()
 	set:add("id1", 1)
@@ -68,7 +68,7 @@ if true then
 	set:dump()
 end
 
-if true then
+if false then
 	print("query======================================")
 	local set = oset.new()
 	set:add("id1", 21)
@@ -96,7 +96,7 @@ if true then
 	print('set:getbyscore(0)', set:getbyscore(0))
 end
 
-if true then
+if false then
 	print("iterate======================================")
 	local set = oset.new()
 	set:add("id1", 21)
@@ -173,7 +173,7 @@ if true then
 	end
 end
 
-if true then
+if false then
 	print("level======================================")
 	local set = oset.new()
 	for i = 1, 10000 do
@@ -182,7 +182,7 @@ if true then
 	set:dump(1)
 end
 
-if true then
+if false then
 	print("benchmark======================================")
 	local set = oset.new()
 	for i = 1, 10000 do

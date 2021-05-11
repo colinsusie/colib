@@ -11,11 +11,12 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "coconf.h"
+#include "corand.h"
 
 #define ORDERED_SET "CO_ORDERED_SET"
 #define to_ordered_set(L) ((oset_t*)luaL_checkudata((L), 1, ORDERED_SET))
 #define MAX_LEVEL 32
-#define LEVEL_P 0.3
+#define LEVEL_P (double)0.3
 
 struct osetnode;
 
@@ -98,9 +99,10 @@ static int oset_getlen(lua_State *L) {
 }
 
 // 生成结点的级数，概率是LEVEL_P
-static inline int _oset_randomlevel() {
+static inline int _oset_randomlevel(lua_State *L) {
+	randstate_t *state = (randstate_t*)lua_touserdata(L, lua_upvalueindex(1));
 	int level = 1;
-	while (level < MAX_LEVEL && (random() & 0xFFFF) < (LEVEL_P * 0xFFFF))
+	while (level < MAX_LEVEL && ((double)(randnext(state) & 0xFFFFFFFF) < LEVEL_P * 0xFFFFFFFF))
 		level += 1;
 	return level;
 }
@@ -168,7 +170,7 @@ static int oset_add(lua_State *L) {		// S: oset val score
 	lua_pop(L, 1);						// S: oset val score dict
 
 	// 创建结点
-	int level = _oset_randomlevel();
+	int level = _oset_randomlevel(L);
 	osetnode_t *node = _oset_createnode(oset, level, score);
 	_oset_add_to_link(oset, node);
 
@@ -627,12 +629,18 @@ LUAMOD_API int luaopen_colibc_oset(lua_State *L) {
 
 	// create metatable of oset
 	luaL_newmetatable(L, ORDERED_SET);	// S: mt
-	luaL_setfuncs(L, oset_mt, 0);
-	lua_pushvalue(L, -1);				// S: mt|mt
+
+	// create pseudo random number generator(PRNG)
+	randstate_t *state = (randstate_t*)co_newuserdata(L, sizeof(randstate_t));		// S: mt rand
+	randinit(state, (uint64_t)time(NULL), (uint64_t)(size_t)L);
+	int i;
+	for (i = 0; i < 16; i++)
+    	randnext(state);  /* discard initial values to "spread" seed */
+
+	luaL_setfuncs(L, oset_mt, 1);		// S: mt
+	lua_pushvalue(L, -1);				// S: mt mt
 	lua_setfield(L, -2, "__index");		// S: mt
 
-	luaL_newlib(L, lib);		// lib
-
-	srandom(time(NULL));
+	luaL_newlib(L, lib);				// S: mt lib
 	return 1;
 }

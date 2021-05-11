@@ -7,6 +7,6 @@ If NOT Defined LUA_SRC (
     set /p LUA_SRC=input lua src path:
 )
 cl /MD /O2 /c /DLUA_BUILD_AS_DLL /utf-8 /I"%LUA_SRC%" src/*.c
-link /DLL /LIBPATH:"%LUA_SRC%" lua.lib /OUT:colib/colib.dll *.obj
+link /DLL /LIBPATH:"%LUA_SRC%" lua.lib /OUT:colib/colibc.dll *.obj
 
 pause
