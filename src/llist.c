@@ -531,7 +531,7 @@ static const luaL_Reg mlib[] = {
 	{NULL, NULL}
 };
 
-LUAMOD_API int luaopen_colib_list(lua_State *L) {
+LUAMOD_API int luaopen_colibc_list(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, LIST_KEY);
 	luaL_setfuncs(L, mlib, 0);

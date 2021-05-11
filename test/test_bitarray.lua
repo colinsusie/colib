@@ -4,9 +4,9 @@ if package.config:sub(1, 1) == "\\" then
 else
 	package.cpath = package.cpath .. ";../colib/?.so"
 end
-package.path = package.path ..";../colib/?.lua"
+package.path = package.path ..";../?.lua"
 
-local bitarray = require "bitarray"
+local bitarray = require "colib.bitarray"
 
 local a = bitarray.new(2, 48)
 

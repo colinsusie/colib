@@ -1,5 +1,5 @@
 ---@type cooset
-local oset = require "colib.oset"
+local oset = require "colibc.oset"
 
 ---@class cosetrank 排行信息
 ---@field rank number

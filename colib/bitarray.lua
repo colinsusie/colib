@@ -1,3 +1,3 @@
 ---@type cobitarray
-local bitarray = require "colib.bitarray"
+local bitarray = require "colibc.bitarray"
 return bitarray

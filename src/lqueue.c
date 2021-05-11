@@ -164,7 +164,7 @@ static luaL_Reg m[] = {
 	{NULL, NULL},
 };
 
-LUAMOD_API int luaopen_colib_queue(lua_State *L) {
+LUAMOD_API int luaopen_colibc_queue(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, QUQUE_KEY);
 	luaL_setfuncs(L, m, 0);

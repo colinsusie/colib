@@ -1,4 +1,4 @@
 
 ---@type coqueue
-local queue = require "colib.queue"
+local queue = require "colibc.queue"
 return queue

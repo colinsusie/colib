@@ -622,7 +622,7 @@ static const luaL_Reg lib[] = {
 	{NULL, NULL}
 };
 
-LUAMOD_API int luaopen_colib_oset(lua_State *L) {
+LUAMOD_API int luaopen_colibc_oset(lua_State *L) {
 	luaL_checkversion(L);
 
 	// create metatable of oset

@@ -8,7 +8,7 @@ local tointeger = math.tointeger
 local mfloor = math.floor
 
 ---@type codbg
-local dbg = require "colib.dbg"
+local dbg = require "colibc.dbg"
 
 ---@class DbgStrArg 打印对象的参数
 ---@field newline string 换行符，默认为\n

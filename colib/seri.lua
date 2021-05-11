@@ -4,6 +4,6 @@
 --- DateTime: 2021/4/8 21:58
 ---
 ---@type coseri
-local coseri = require "colib.seri"
+local coseri = require "colibc.seri"
 
 return coseri

@@ -5,7 +5,7 @@
 ---
 
 ---@type costr
-local costr = require "colib.str"
+local costr = require "colibc.str"
 
 return costr
 

@@ -1,6 +1,6 @@
 ---@type cofilesys
-local cofilesys = require "colib.filesys"
-local costr = require "colib.str"
+local cofilesys = require "colibc.filesys"
+local costr = require "colibc.str"
 local strsub = string.sub
 local strrep = string.rep
 local strgsub = string.gsub

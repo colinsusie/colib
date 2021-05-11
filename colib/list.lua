@@ -1,3 +1,3 @@
 ---@type colist
-local colist = require "colib.list"
+local colist = require "colibc.list"
 return colist

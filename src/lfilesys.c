@@ -415,7 +415,7 @@ static void init_consts(lua_State *L) {
 #endif
 }
 
-LUAMOD_API int luaopen_colib_filesys(lua_State *L) {
+LUAMOD_API int luaopen_colibc_filesys(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, DIR_ITR);
 	luaL_setfuncs(L, dirmt, 0);

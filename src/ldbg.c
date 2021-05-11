@@ -210,7 +210,7 @@ static const luaL_Reg lib[] = {
 	{NULL, NULL},
 };
 
-LUAMOD_API int luaopen_colib_dbg(lua_State *L) {
+LUAMOD_API int luaopen_colibc_dbg(lua_State *L) {
 	luaL_newlib(L, lib);
 	init_stopwatch_mt(L);
 	return 1;

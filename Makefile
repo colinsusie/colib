@@ -2,7 +2,7 @@
 SRC := $(wildcard src/*.c)
 OBJ := $(SRC:.c=.o)
 DEP := $(SRC:.c=.d)
-COLIB := colib/colib.so
+COLIB := colib/colibc.so
 
 # CC := gcc
 # setting include path for lua

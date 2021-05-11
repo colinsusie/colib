@@ -263,7 +263,7 @@ static luaL_Reg m[] = {
 	{NULL, NULL},
 };
 
-LUAMOD_API int luaopen_colib_bitarray(lua_State *L) {
+LUAMOD_API int luaopen_colibc_bitarray(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_newmetatable(L, BITARRAY);
 	luaL_setfuncs(L, m, 0);
