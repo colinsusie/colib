@@ -72,7 +72,7 @@ make "INC=-I/home/colin/lua-5.4.3/src"
 gmake "INC=-I/home/colin/lua-5.4.3/src"
 ```
 
-如无意外，应该可以编译成功，最后colib.so在colib子目录中。
+如无意外，应该可以编译成功，最后colibc.so在colib子目录中。
 
 ### Windows
 
@@ -106,7 +106,7 @@ link /OUT:luac.exe luac._obj lua-static.lib
 
 在命令行中执行`BuildWin.bat`，该批处理要求你输入Lua src的路径，也就是上面的`c:\Users\colin\lua-5.4.3\src`，输入并回车。
 
-如无意外，应该可以编译成功，最后colib.dll文件在colib子目录中。
+如无意外，应该可以编译成功，最后colibc.dll文件在colib子目录中。
 
 ## 使用该库的注意点
 
