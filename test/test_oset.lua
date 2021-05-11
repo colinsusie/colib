@@ -10,7 +10,7 @@ local oset = require "oset"
 local dbg = require "dbg"
 
 ----------------------------------------------------------------------
-if true then
+if false then
 	local set = oset.new()
 	print("set: ", set)
 	for i = 1, 10 do
@@ -96,7 +96,7 @@ if false then
 	print('set:getbyscore(0)', set:getbyscore(0))
 end
 
-if false then
+if true then
 	print("iterate======================================")
 	local set = oset.new()
 	set:add("id1", 21)
@@ -114,10 +114,11 @@ if false then
 	for rank, value, score in set:itrbyrank(1) do
 		print(rank, value, score)
 	end
-	print("set:itrbyrank(4)-------------")
-	for rank, value, score in set:itrbyrank(4) do
+	print("set:itrbyrank(4, true)-------------")
+	for rank, value, score in set:itrbyrank(4, true) do
 		print(rank, value, score)
 	end
+
 	print("set:itrbyrank(10)-------------")
 	for rank, value, score in set:itrbyrank(10) do
 		print(rank, value, score)
@@ -131,8 +132,8 @@ if false then
 	for rank, value, score in set:itrbyscore(53) do
 		print(rank, value, score)
 	end
-	print("set:itrbyscore(23)-------------")
-	for rank, value, score in set:itrbyscore(23) do
+	print("set:itrbyscore(23, true)-------------")
+	for rank, value, score in set:itrbyscore(23, true) do
 		print(rank, value, score)
 	end
 	print("set:itrbyscore(1000)-------------")
@@ -156,8 +157,8 @@ if false then
 	for rank, value, score in set:itrbyvalue('id0') do
 		print(rank, value, score)
 	end
-	print("set:itrbyvalue('id8')-------------")
-	for rank, value, score in set:itrbyvalue('id8') do
+	print("set:itrbyvalue('id8', true)-------------")
+	for rank, value, score in set:itrbyvalue('id8', true) do
 		print(rank, value, score)
 	end
 	print("set:itrbyvalue('id2')-------------")
@@ -165,7 +166,7 @@ if false then
 		print(rank, value, score)
 	end
 
-	print("oset.getranklist(set, 3, 4)------------")
+	print("oset.getranklist(set, 5, 4)------------")
 	---@type cosetrank
 	local t = oset.getranklist(set, 5, 4);
 	for _, i in ipairs(t) do

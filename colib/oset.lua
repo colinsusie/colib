@@ -10,10 +10,11 @@ local oset = require "colibc.oset"
 ---@param setobj coosetobj
 ---@param rank number 起始排行
 ---@param count number 排行数量
+---@param reverse boolean 是否前向迭代
 ---@return cosetrank[]
-function oset.getranklist(setobj, rank, count)
+function oset.getranklist(setobj, rank, count, reverse)
 	local t = {}
-	for r, v, s in setobj:itrbyrank(rank) do
+	for r, v, s in setobj:itrbyrank(rank, reverse) do
 		if count > 0 then
 			count = count - 1
 			t[#t+1] = {

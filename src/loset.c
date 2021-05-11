@@ -377,6 +377,7 @@ static int oset_getbyscore(lua_State *L) {
 static int _oset_next(lua_State *L) {
 	osetnode_t *node = (osetnode_t*)lua_touserdata(L, lua_upvalueindex(2));
 	size_t rank = (size_t)lua_tointeger(L, lua_upvalueindex(3));
+	int reverse = lua_toboolean(L, lua_upvalueindex(4));
 	if (!node) {
 		lua_pushnil(L);
 		return 1;
@@ -388,10 +389,16 @@ static int _oset_next(lua_State *L) {
 		lua_pushinteger(L, node->score);			// S: rank val score
 		
 		// 替换upvalue
-		node = node->level[0].next;
+		if (!reverse) {
+			node = node->level[0].next;
+			rank++;
+		} else {
+			node = node->prev;
+			rank--;
+		}
 		lua_pushlightuserdata(L, node);				// S: rank val score node
 		lua_replace(L, lua_upvalueindex(2));		// S: rank val score
-		lua_pushinteger(L, rank+1);					// S: rank val score rank
+		lua_pushinteger(L, rank);					// S: rank val score rank
 		lua_replace(L, lua_upvalueindex(3));		// S: rank val score
 		
 		return 3;
@@ -399,10 +406,11 @@ static int _oset_next(lua_State *L) {
 }
 
 // 返回迭代器，从某个排名开始迭代，如果不传默认从第1个元素开始：
-// for rank, value, score in oset:itrbyrank(10) do ... end
+// for rank, value, score in oset:itrbyrank(10, reverse) do ... end
 static int oset_itrbyrank(lua_State *L) {
 	oset_t *oset = to_ordered_set(L);			// S: osetud rank
 	size_t rank = (size_t)luaL_optinteger(L, 2, 1);
+	int reverse = lua_toboolean(L, 3);
 	osetnode_t *node = NULL;
 	if (rank == 1) {
 		node = oset->head->level[0].next;
@@ -422,17 +430,19 @@ static int oset_itrbyrank(lua_State *L) {
 		}
 	}
 	// 返回 closure
-	lua_pushvalue(L, 1);				// S: oset
-	lua_pushlightuserdata(L, node);		// S: oset node
-	lua_pushinteger(L, rank);			// S: oset node rank
-	lua_pushcclosure(L, _oset_next, 3);	// S: closure
+	lua_pushvalue(L, 1);						// S: oset
+	lua_pushlightuserdata(L, node);				// S: oset node
+	lua_pushinteger(L, rank);					// S: oset node rank
+	lua_pushboolean(L, reverse);	// S: oset node rank rev
+	lua_pushcclosure(L, _oset_next, 4);			// S: closure
 	return 1;
 }
 
 // 返回迭代器，从某个积分开始迭代，如果不传默认从第1个元素开始：
-// for rank, value, score in oset:itrbyscore(100321) do ... end
+// for rank, value, score in oset:itrbyscore(100321, reverse) do ... end
 static int oset_itrbyscore(lua_State *L) {
 	oset_t *oset = to_ordered_set(L);
+	int reverse = lua_toboolean(L, 3);
 	osetnode_t *node = NULL;
 	size_t rank;
 	if (lua_isnoneornil(L, 2)) {
@@ -456,17 +466,19 @@ static int oset_itrbyscore(lua_State *L) {
 		}
 	}
 	// 返回 closure
-	lua_pushvalue(L, 1);				// S: oset
-	lua_pushlightuserdata(L, node);		// S: oset node
-	lua_pushinteger(L, rank);			// S: oset node rank
-	lua_pushcclosure(L, _oset_next, 3);
+	lua_pushvalue(L, 1);						// S: oset
+	lua_pushlightuserdata(L, node);				// S: oset node
+	lua_pushinteger(L, rank);					// S: oset node rank
+	lua_pushboolean(L, reverse);	// S: oset node rank rev
+	lua_pushcclosure(L, _oset_next, 4);
 	return 1;
 }
 
 // 返回迭代器，从某个值开始迭代，如果不传默认从第1个元素开始：
-// for rank, value, score in oset:itrbyvalue(val) do ... end
+// for rank, value, score in oset:itrbyvalue(val, reverse) do ... end
 static int oset_itrbyvalue(lua_State *L) {
 	oset_t *oset = to_ordered_set(L);
+	int reverse = lua_toboolean(L, 3);
 	osetnode_t *node = NULL;
 	size_t rank = 0;
 	if (lua_isnoneornil(L, 2)) {
@@ -474,9 +486,9 @@ static int oset_itrbyvalue(lua_State *L) {
 		rank = 1;
 	} else {
 		// 查结点
-		lua_getuservalue(L, 1);				// S: oset val dict
-		lua_pushvalue(L, 2);				// S: oset val dict val
-		if (lua_rawget(L, -2) != LUA_TLIGHTUSERDATA) {	// S: oset val dict node
+		lua_getuservalue(L, 1);				// S: oset val rev dict
+		lua_pushvalue(L, 2);				// S: oset val rev dict val
+		if (lua_rawget(L, -2) != LUA_TLIGHTUSERDATA) {	// S: oset val rev dict node
 			node = NULL;
 		} else {
 			node = (osetnode_t*)lua_touserdata(L, -1);
@@ -495,12 +507,14 @@ static int oset_itrbyvalue(lua_State *L) {
 				}
 			}
 		}
+		lua_pop(L, 2);			// S: oset val rev
 	}
 
-	lua_pushvalue(L, 1);				// S: oset
-	lua_pushlightuserdata(L, node);		// S: oset node
-	lua_pushinteger(L, rank);			// S: oset node rank
-	lua_pushcclosure(L, _oset_next, 3);
+	lua_pushvalue(L, 1);						// S: oset
+	lua_pushlightuserdata(L, node);				// S: oset node
+	lua_pushinteger(L, rank);					// S: oset node rank
+	lua_pushboolean(L, reverse);	// S: oset node rank rev
+	lua_pushcclosure(L, _oset_next, 4);
 	return 1;
 }
 

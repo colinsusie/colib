@@ -441,14 +441,17 @@ function coosetobj:getbyscore(score) end
 
 ---返回排名在rank处的迭代器，用在for循环中： for rank, value, score in obj:itrbyrank(1) ... end
 ---如果不指定rank，则从第1名开始迭代
-function coosetobj:itrbyrank(rank) end
+---reverse 是否前向迭代
+function coosetobj:itrbyrank(rank, reverse) end
 
 ---返回分数在score处的迭代器，用在for循环中： for rank, value, score in obj:itrbscore(1) ... end
 ---如果不指定score，则从第1名开始迭代
+---reverse 是否前向迭代
 function coosetobj:itrbyscore(score) end
 
 ---返回value处的迭代器，用在for循环中： for rank, value, score in obj:itrbvalue(1) ... end
 ---如果不指定value，则从第1名开始迭代
+---reverse 是否前向迭代
 function coosetobj:itrbyvalue(value) end
 
 ---打印集合的内容
