@@ -453,3 +453,35 @@ function coosetobj:itrbyvalue(value) end
 
 ---打印集合的内容
 function coosetobj:dump() end
+
+
+------------------------------------------------------------------------------------------------------
+
+---@class corand 随机数生成器
+local corand = {}
+
+---新建一个生成器
+---@param seed1 number 随机种子，如果这两个不指定，则内部用默认的种子
+---@param seed2 number
+---@return corandobj
+function corand.new(seed1, seed2) end
+
+---@class corandobj 随机数生成器
+local corandobj = {}
+
+---重新设置随机种子
+---@param seed1 number 随机种子
+---@param seed2 number 随机种子
+function corandobj:setseed(seed1, seed) end
+
+---生成下一个整数，如果 a, b指定，则生成[a, b]；如果不指定，则生成int64范围的整数
+---@param a number 范围
+---@param b number 范围
+---@return number
+function corandobj:nextint(a, b) end
+
+---生成下一个浮点数，如果 a, b指定，则生成[a, b)；如果不指定，则生成[0, 1)范围的浮点数
+---@param a number 范围
+---@param b number 范围
+---@return number
+function corandobj:nextfloat(a, b) end

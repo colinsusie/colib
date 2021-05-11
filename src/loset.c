@@ -632,7 +632,7 @@ LUAMOD_API int luaopen_colibc_oset(lua_State *L) {
 
 	// create pseudo random number generator(PRNG)
 	randstate_t *state = (randstate_t*)co_newuserdata(L, sizeof(randstate_t));		// S: mt rand
-	randinit(state, (uint64_t)time(NULL), (uint64_t)(size_t)L);
+	randseed(state, (uint64_t)time(NULL), (uint64_t)(size_t)L);
 	int i;
 	for (i = 0; i < 16; i++)
     	randnext(state);  /* discard initial values to "spread" seed */
