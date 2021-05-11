@@ -36,6 +36,8 @@
 	- 位数组
 - filesys模块
 	- 常用的文件和目录接口
+- oset有序集合
+	- 基于skiplist实现
 
 ## 编译指南
 
@@ -122,5 +124,3 @@ link /OUT:luac.exe luac._obj lua-static.lib
 - CentOS 8
 
 ## 待开发的模块
-
-- Skiplist：跳表
