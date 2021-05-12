@@ -43,8 +43,21 @@ typedef struct oset {
 	int level;				// 集合最高层级
 } oset_t;
 
+// 序号到达最大值，重新分配序列号
+static void _oset_re_assgin_seq(oset_t *oset) {
+	oset->seq = 0;
+	osetnode_t *node = oset->head;
+	while (node) {
+		node->seq = oset->seq++;
+		node = node->level[0].next;
+	}
+}
+
 // 创建结点
 static inline osetnode_t* _oset_createnode(oset_t *oset, int level, lua_Integer score) {
+	if (oset->seq == 0) {
+		_oset_re_assgin_seq(oset);
+	}
 	osetnode_t *node = (osetnode_t*)co_malloc(sizeof(osetnode_t) + level * sizeof(osetlevel_t));
 	node->score = score;
 	node->nlv = level;
@@ -62,6 +75,8 @@ static int oset_new(lua_State *L) {
 	oset->level = 1;
 	oset->length = 0;
 	oset->seq = 0;
+	oset->head = NULL;
+	// 创建头结点
 	oset->head = _oset_createnode(oset, MAX_LEVEL, 0);
 	int i;
 	for (i = 0; i < MAX_LEVEL; i++) {
@@ -102,7 +117,7 @@ static int oset_getlen(lua_State *L) {
 static inline int _oset_randomlevel(lua_State *L) {
 	randstate_t *state = (randstate_t*)lua_touserdata(L, lua_upvalueindex(1));
 	int level = 1;
-	while (level < MAX_LEVEL && ((double)(randnext(state) & 0xFFFFFFFF) < LEVEL_P * 0xFFFFFFFF))
+	while (level < MAX_LEVEL && (randfloat(state) < LEVEL_P))
 		level += 1;
 	return level;
 }

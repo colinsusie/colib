@@ -10,7 +10,7 @@ local oset = require "oset"
 local dbg = require "dbg"
 
 ----------------------------------------------------------------------
-if false then
+if true then
 	local set = oset.new()
 	print("set: ", set)
 	for i = 1, 10 do
@@ -19,7 +19,7 @@ if false then
 	set:dump()
 end
 
-if false then
+if true then
 	print("delete value======================================")
 	local set = oset.new()
 	set:add("id1", 1)
@@ -48,7 +48,7 @@ if false then
 	set:dump()
 end
 
-if false then
+if true then
 	print("update score======================================")
 	local set = oset.new()
 	set:add("id1", 1)
@@ -68,7 +68,7 @@ if false then
 	set:dump()
 end
 
-if false then
+if true then
 	print("query======================================")
 	local set = oset.new()
 	set:add("id1", 21)
@@ -174,7 +174,7 @@ if true then
 	end
 end
 
-if false then
+if true then
 	print("level======================================")
 	local set = oset.new()
 	for i = 1, 10000 do
@@ -183,7 +183,7 @@ if false then
 	set:dump(1)
 end
 
-if false then
+if true then
 	print("benchmark======================================")
 	local set = oset.new()
 	for i = 1, 10000 do
@@ -197,13 +197,13 @@ if false then
 		set:update("id"..mrand(1, 10000), mrand(1, 3000))
 	end
 	w:stop()
-	print("set:update 10000: ", w:elapsed())
+	print("set:update 1000000: ", w:elapsed())
 
 	w:start()
 	for i = 1, 1000000 do
 		set:getbyrank(mrand(1, 10000))
 	end
 	w:stop()
-	print("set:getrank 10000: ", w:elapsed())
+	print("set:getrank 1000000: ", w:elapsed())
 end
 
