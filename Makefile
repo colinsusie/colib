@@ -8,7 +8,11 @@ COLIB := colib/colibc.so
 # setting include path for lua
 INC :=
 # INC := -I../lua/lua-5.4.2/src
+ifeq ($(DEBUG), 1)
+CFLAGS := -Wall -O -g -fPIC $(INC)
+else
 CFLAGS := -Wall -O2 -fPIC $(INC)
+endif
 LDFLAGS := -shared
 LDLIBS := -lm
 

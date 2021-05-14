@@ -179,7 +179,7 @@ static int oset_add(lua_State *L) {		// S: oset val score
 	lua_getuservalue(L, 1);				// S: oset val score dict
 	lua_pushvalue(L, 2);				// S: oset val score dict val
 	if (lua_rawget(L, -2) == LUA_TLIGHTUSERDATA) {	// S: oset val score dict node
-		luaL_pushfail(L);
+		lua_pushnil(L);
 		return 1;
 	}
 	lua_pop(L, 1);						// S: oset val score dict
@@ -242,7 +242,7 @@ static int oset_remove(lua_State *L) {
 	lua_getuservalue(L, 1);		// S: oset val dict
 	lua_pushvalue(L, 2);		// S: oset val dict val
 	if (lua_rawget(L, -2) != LUA_TLIGHTUSERDATA) {	// S: oset val dict node
-		luaL_pushfail(L);
+		lua_pushnil(L);
 		return 1;
 	}
 	osetnode_t *node = (osetnode_t*)lua_touserdata(L, -1);
@@ -273,7 +273,7 @@ static int oset_update(lua_State *L) {
 	lua_getuservalue(L, 1);				// S: oset val nscore dict
 	lua_pushvalue(L, 2);				// S: oset val nscore dict val
 	if (lua_rawget(L, -2) != LUA_TLIGHTUSERDATA) {	// S: oset val nscore dict node
-		luaL_pushfail(L);
+		lua_pushnil(L);
 		return 1;
 	}
 	// 新分数还在前后结点的中间，只更新分数即可，不用移动。
@@ -304,7 +304,7 @@ static int oset_getbyvalue(lua_State *L) {
 	lua_getuservalue(L, 1);				// S: oset val dict
 	lua_pushvalue(L, 2);				// S: oset val dict val
 	if (lua_rawget(L, -2) != LUA_TLIGHTUSERDATA) {	// node = dict[val]  S: oset val dict node
-		luaL_pushfail(L);
+		lua_pushnil(L);
 		return 1;
 	}
 	osetnode_t *node = (osetnode_t*)lua_touserdata(L, -1);
@@ -326,7 +326,7 @@ static int oset_getbyvalue(lua_State *L) {
 			return 3;
 		}
 	}
-	luaL_pushfail(L);
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -354,7 +354,7 @@ static int oset_getbyrank(lua_State *L) {
 			}
 		}
 	}
-	luaL_pushfail(L);
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -383,7 +383,7 @@ static int oset_getbyscore(lua_State *L) {
 			return 3;
 		}
 	}
-	luaL_pushfail(L);
+	lua_pushnil(L);
 	return 1;
 }
 
