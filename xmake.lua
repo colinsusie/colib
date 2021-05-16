@@ -30,6 +30,7 @@ target("colibc") do
 			target:add("links", "lua")
 		else		-- other
 			target:set("filename", "colibc.so")
+			target:set("toolchains", "gcc")
 
 			local luadir = os.getenv("LUA_DIR")
 			if luadir then
