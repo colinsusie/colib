@@ -6,8 +6,6 @@ target("colibc") do
 	add_files("src/*.c")					-- 源代码
 
 	set_targetdir("$(projectdir)/colib")	-- 生成路径
-	set_objectdir("$(buildir)/objs")		-- object目标生成的路径
-	set_dependir("$(buildir)/deps")			-- deps文件生成的路径
 	set_warnings("allextra")				-- 全部警告
 
 	on_load(function (target)
