@@ -43,70 +43,69 @@
 
 ## 编译指南
 
-### Linux/MacOS
+### 1. 使用xmake编译
 
-如果你下载过Lua的源代码，并且已经编译和安装到系统中，那么只需要在colib根目录下执行`make`即可。
-
-如果编译时出现找不到lua.h的错误，请看下面步骤：
-
-- 下载和编译Lua：
+先[安装xmake](https://xmake.io/#/zh-cn/getting_started)；然后在根目录下执行：
 
 ```sh
-curl -R -O http://www.lua.org/ftp/lua-5.4.3.tar.gz
-tar zxf lua-5.4.3.tar.gz
-cd lua-5.4.3
-make all test
+xmake
 ```
 
-- 编译colib
+如果提示找不到lua.h文件，则需要配置lua的头文件路径，在Windows下：
 
-假设你的Lua代码目录是`/home/colin/lua-5.4.3/src`；进入colib根目录执行：
-
-如果不是FreeBSD：
 ```sh
-make "INC=-I/home/colin/lua-5.4.3/src"
+xmake f --includedirs=<luaincdir> --linkdirs=<lualibdir> --links=<lualib>
+# <luaincdir> 替换为Lua代码文件所在的路径，比如：e:\lua\lua-5.4.2\src
+# <lualibdir> 替换为编译出来的Lua库文件所在的路径，比如：e:\lua\lua-5.4.2\build\windows\x64\release
+# <lualib> 替换为Lua库文件，比如：lua；实际上找的是lua.lib
 ```
 
-如果是FreeBSD，先安装gmake，然后：
+在其他系统下：
+
 ```sh
-gmake "INC=-I/home/colin/lua-5.4.3/src"
+xmake f --includedirs=<luaincdir>
+# <luaincdir> 替换为Lua代码文件所在的路径，比如/home/colin/lua-5.4.2/src
 ```
 
-如无意外，应该可以编译成功，最后colibc.so在colib子目录中。
+上面命令只需要执行一次，以后就不用再执行。接下来仍然执行`xmake`来编译工程，看看能否成功。
 
-### Windows
+### 2. 使用make编译
 
-- 安装Visual Studio
+make只支持在非Window系统下编译，同样在根目录下执行(在freebsd下用gmake代替make)：
 
-首先需要先安装[Visual Studio](https://visualstudio.microsoft.com/zh-hans/vs/)，我的安装的是`Microsoft Visual Studio Community 2019`
-
-- 下载和编译Lua
-
-到[Lua官网](https://www.lua.org/download.html)下载Lua代码，解压后的目录假设是：`c:\Users\colin\lua-5.4.3`。
-
-在开始菜单的`Visual Studio`文件夹中，找到`x64 Native Tools Command Prompt for VS 2019`或`x86 Native Tools Command Prompt for VS 2019`，一个用于编译x64程序，另一个用于编译x86程序，根据你的需求打开其中一个，弹出命令行。
-
-在命令行中定位到`c:\Users\colin\lua-5.4.3\src`，然后执行下面命令：
-
-```bat
-cl /MD /O2 /c /DLUA_BUILD_AS_DLL *.c
-ren lua.obj lua._obj
-ren luac.obj luac._obj
-link /DLL /IMPLIB:lua.lib /OUT:lua.dll *.obj
-link /OUT:lua.exe lua._obj lua.lib
-lib /OUT:lua-static.lib *.obj
-link /OUT:luac.exe luac._obj lua-static.lib
+```sh
+make
 ```
 
-执行完毕，将在`c:\Users\colin\lua-5.4.3\src`中看到`lua.exe, luac.exe, lua.dll`这些程序文件，以及`lua.lib, lua-static.lib`这些库文件。
+如果提示找不到lua.h文件，同样需要指定Lua的头文件路径：
 
-- 编译colib
+```sh
+make "INC=-I<luaincdir>"
+# <luaincdir> 替换为Lua代码文件所在的路径，比如/home/colin/lua-5.4.2/src
+```
 
-同样运行`x64 Native Tools Command Prompt for VS 2019`或`x86 Native Tools Command Prompt for VS 2019`，定位到colib根目录。
+如无意外应该可以编译成功，最后生成colibc.so在colib子目录中。
 
-在命令行中执行`BuildWin.bat`，该批处理要求你输入Lua src的路径，也就是上面的`c:\Users\colin\lua-5.4.3\src`，输入并回车。
+### 3. 使用xmake在Windows下编译Lua
 
-如无意外，应该可以编译成功，最后colibc.dll文件在colib子目录中。
+根目录下有一个`lua-xmake.lua`文件，将其拷贝到Lua目录下，比如`/home/colin/lua-5.4.2`，然后改名为`xmake.lua`。
+
+接着执行：
+
+```sh
+xmake
+```
+
+如果成功会在`build\windows\x64\release`生成下面文件：
+
+```sh
+lua-static.lib		# 静态库
+lua.exe				# 执行程序
+lua.dll				# 动态库
+luac.exe			# 编译程序
+lua.lib				# 导入库
+```
+
 
 ## 使用该库的注意点
 
