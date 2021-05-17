@@ -20,7 +20,7 @@ target("colibc") do
 			if is_plat("macosx") then
 				target:add("shflags", "-undefined dynamic_lookup")
 			end
-			
+
 			-- 尝试找到lua头文件的搜索目录
 			import("lib.detect.find_path")
 			local p = find_path("lua.h", {"/usr/local/include"})
