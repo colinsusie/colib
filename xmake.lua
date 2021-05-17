@@ -1,51 +1,32 @@
+
+add_rules("mode.debug", "mode.release")
+
 target("colibc") do
-	set_kind("shared")
-	add_files("src/*.c")
+	set_kind("shared")						-- 动态库
+	add_files("src/*.c")					-- 源代码
+
 	set_targetdir("$(projectdir)/colib")	-- 生成路径
 	set_objectdir("$(buildir)/objs")		-- object目标生成的路径
 	set_dependir("$(buildir)/deps")			-- deps文件生成的路径
 	set_warnings("allextra")				-- 全部警告
-	if is_mode("release") then				-- release开启优化
-		set_optimize("faster")
-	end
-	if is_plat("macosx") then
-		add_shflags("-undefined dynamic_lookup")
-	end
 
-	before_build(function (target)			-- 目标加载时
-		local function input(msg)
-			io.write(msg)
-			io.flush()
-			return io.read()
-		end
-
-		if is_plat("windows") then			-- windows
+	on_load(function (target)
+		if is_plat("windows") then
 			target:set("filename", "colibc.dll")
-			target:add("cflags", "/utf-8")
+			target:add("cflags", "/utf-8")				-- 支持utf-8代码文件
 			target:add("defines", "LUA_BUILD_AS_DLL")
-
-			local luadir = os.getenv("LUA_DIR")
-			if not luadir then
-				luadir = input("input lua dir: ")
-			end
-			target:add("includedirs", luadir)
-			target:add("linkdirs", luadir)
-			target:add("links", "lua")
-		else		-- other
+		else
 			target:set("filename", "colibc.so")
-			local luadir = os.getenv("LUA_DIR")
-			if luadir then
-				target:add("includedirs", luadir)
-			elseif not os.exists("/usr/local/include/lua.h") then
-				luadir = input("input lua dir: ")
-				target:add("includedirs", luadir)
-			else
-				target:add("includedirs", "/usr/local/include")
+			if is_plat("macosx") then
+				target:add("shflags", "-undefined dynamic_lookup")
+			end
+			
+			-- 尝试找到lua头文件的搜索目录
+			import("lib.detect.find_path")
+			local p = find_path("lua.h", {"/usr/local/include"})
+			if p then
+				target:add("includedirs", p)
 			end
 		end
-	end)
-
-	before_link(function(target)
-		
 	end)
 end
