@@ -118,7 +118,6 @@ function coqueue.pop(q) end
 
 
 ----------------------------------------------------------------------------------------------------
-
 ---@class codbg 调试模块
 local codbg = {}
 
@@ -488,3 +487,17 @@ function corandobj:nextint(a, b) end
 ---@param b number 范围
 ---@return number
 function corandobj:nextfloat(a, b) end
+
+----------------------------------------------------------------------------------------------------
+---@class cocodec 编码模块
+local cocodec = {}
+
+---base64编码
+---@field str string 源字符串
+---@return string 返回编码后的base64字符串
+function cocodec.b64encode(str) end
+
+---base64解码
+---@field str string 源字符串
+---@return string 返回解码后的字符串
+function cocodec.b64decode(str) end
