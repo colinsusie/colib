@@ -501,3 +501,19 @@ function cocodec.b64encode(str) end
 ---@field str string 源字符串
 ---@return string 返回解码后的字符串
 function cocodec.b64decode(str) end
+
+
+----------------------------------------------------------------------------------------------------
+---@class cohashf 非加密哈希函数
+local cohashf = {}
+
+function cohashf.fnv1a64(str) end
+function cohashf.fnv1a32(str) end
+function cohashf.djb2(str) end
+function cohashf.sdbm(str) end
+function cohashf.fnv1a32(str) end
+function cohashf.rs(str) end
+function cohashf.js(str) end
+function cohashf.bkdr(str) end
+function cohashf.dek(str) end
+function cohashf.ap(str) end
