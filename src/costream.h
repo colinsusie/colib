@@ -114,7 +114,7 @@ static inline int ifilestream_initf(istream_t *stm, filereader_t *freader, const
 
 // 关闭文件输入流
 static inline int ifilestream_close(filereader_t *freader) {
-	printf("ifilestream_close, %p, %p\n", freader->b, freader->f);
+	// printf("ifilestream_close, %p, %p\n", freader->b, freader->f);
 	if (freader->b) {
 		co_free(freader->b);
 		freader->b = NULL;
@@ -159,7 +159,7 @@ static inline void membuffer_reset(membuffer_t *buff) {
 
 static inline void membuffer_free(membuffer_t *buff) {
 	if (buff->b && buff->b != buff->s) {
-		printf(">>>>>>>>membuffer_free\n");
+		// printf(">>>>>>>>membuffer_free\n");
 		co_free(buff->b);
 		buff->b = NULL;
 	}

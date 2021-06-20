@@ -7,7 +7,6 @@ end
 package.path = package.path ..";../colib/?.lua"
 
 local cojson = require "json"
-local cjson = require "cjson"
 local codbg = require "dbg"
 local ok, obj, str
 
@@ -92,6 +91,19 @@ ok, obj = pcall(cojson.load, str)
 print(ok, codbg.str(obj))
 
 
+str = [[
+	{
+		"a": {
+			"b": {
+				"c": {
+				}
+			}
+		}
+	}
+]]
+ok, obj = pcall(cojson.load, str, 2)
+print(ok, codbg.str(obj))
+
 local function loadfromefile()
 	print("load test.json")
 	cojson.loadf("./test.json")
@@ -117,7 +129,5 @@ local function benchmark()
 	end
 	dotest("./twitter.json", cojson.load, "cojson")
 	dotest("./canada.json", cojson.load, "cojson")
-	dotest("./twitter.json", cjson.decode, "cjson")
-	dotest("./canada.json", cjson.decode, "cjson")
 end
 benchmark()
