@@ -23,5 +23,10 @@ const char *coutf8_decode(const char *s, utfint *val, int strict);
 // 计算一个utf8字符串的长度
 int coutf8_len(const char *s);
 
+#define UTF8BUFFSZ	8
+
+// 编码unicode codepoint为utf8序列
+int coutf8_encode(char *buff, unsigned long x);
+
 #endif // _COUTF8_H
 

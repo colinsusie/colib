@@ -517,3 +517,22 @@ function cohashf.js(str) end
 function cohashf.bkdr(str) end
 function cohashf.dek(str) end
 function cohashf.ap(str) end
+
+------------------------------------------------------------------------------------------------------
+-- json
+
+---@class cojson json模块
+local cojson = {}
+
+---加载json文本，只支持utf8格式
+---@param str string json文本
+---@param maxdepth number 最大的层级，默认为128层
+---@return any 返回lua对象，如果有错误，会直接抛出异常
+function cojson.load(str, maxdepth) end
+
+---从文件加载json文本，只支持utf8格式，文件可以带BOM头
+---@param fname string json文件路径
+---@param maxdepth number 最大的层级，默认为128层
+---@return any 返回lua对象，如果有错误，会直接抛出异常
+function cojson.loadf(fname, maxdepth) end
+
