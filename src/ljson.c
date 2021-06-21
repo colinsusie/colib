@@ -195,7 +195,7 @@ typedef enum {
 } num_state_e;
 #define invalid_number(p) parser_throw_error(p, "Invalid number, at: %s[:%lu]", parser_error_content(p), currpos(p))
 
-// 解析数字
+// 解析数字: TODO: 待优化
 static void parser_parse_number(json_parser_t *p) {
 	// 提取数字，并对数字进行正确性验证
 	int isfloat = 0;
@@ -256,26 +256,26 @@ convert:
 	savechar(p, '\0');
 	p->tk.type = TK_INTEGER;
 	p->tk.value.i = 0;
-	// char *endptr;
-	// errno = 0;
-	// if (isfloat) {
-	// 	p->tk.type = TK_FLOAT;
-	// 	double val = strtod(p->buff.b, &endptr);
-	// 	if (p->buff.b + p->buff.sz - 1 != endptr)
-	// 		parser_throw_error(p, "Invalid float, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 	else if (errno == ERANGE)
-	// 		parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 	p->tk.value.d = val;
+	char *endptr;
+	errno = 0;
+	if (isfloat) {
+		p->tk.type = TK_FLOAT;
+		double val = strtod(p->buff.b, &endptr);
+		if (p->buff.b + p->buff.sz - 1 != endptr)
+			parser_throw_error(p, "Invalid float, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		else if (errno == ERANGE)
+			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		p->tk.value.d = val;
 		
-	// } else {
-	// 	p->tk.type = TK_INTEGER;
-	// 	long long val = strtoll(p->buff.b, &endptr, 10);
-	// 	if (p->buff.b + p->buff.sz - 1 != endptr)
-	// 		parser_throw_error(p, "Invalid integer, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 	else if (errno == ERANGE)
-	// 		parser_throw_error(p, "Integer overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 	p->tk.value.i = (int64_t)val;
-	// }
+	} else {
+		p->tk.type = TK_INTEGER;
+		long long val = strtoll(p->buff.b, &endptr, 10);
+		if (p->buff.b + p->buff.sz - 1 != endptr)
+			parser_throw_error(p, "Invalid integer, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		else if (errno == ERANGE)
+			parser_throw_error(p, "Integer overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		p->tk.value.i = (int64_t)val;
+	}
 }
 
 // 解析utf8转义
@@ -303,43 +303,6 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
-// 加速转义符的判断
-// #define Z16 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-// static const char escape[256] = {
-// 	Z16, Z16, 0, 0,'\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '/',
-// 	Z16, Z16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
-// 	0, 0,'\b', 0, 0, 0,'\f', 0, 0, 0, 0, 0, 0, 0,'\n', 0,
-// 	0, 0,'\r', 0,'\t', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-// 	Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16
-// };
-
-// 	nextchar(p);		// skip "
-// 	for (;;) {
-// 		int c = p->c;
-// 		if (unlikely(c == '\\')) {
-// 			nextchar(p);
-// 			int c2 = p->c;
-// 			if (unlikely(c2 == EOF)) {
-// 				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 			} else if (likely(escape[c2])) {
-// 				nextchar(p);
-// 				savechar(p, escape[c2]);
-// 			} else if (unlikely(c2 == 'u')) {
-// 				parser_parse_utf8esc(p);
-// 			} else {
-// 				nextchar(p);
-// 				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 			}
-// 		} else if (unlikely(c == '"')) {
-// 			break;
-// 		} else if (unlikely(c < 32)) {	// EOF, \r, \n, ...
-// 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 		} else {
-// 			savecurr(p);
-// 			nextchar(p);
-// 		}
-// 	}
-
 	nextchar(p);		// skip "
 	for (;;) {
 		int c = p->c;
@@ -377,44 +340,6 @@ static void parser_parse_string(json_parser_t *p) {
 			nextchar(p);
 		}
 	}
-
-	// while (p->c != '"') {
-	// 	switch (p->c) {
-	// 		case '\\': {	// escape
-	// 			nextchar(p);
-	// 			switch (p->c) {
-	// 				case 'b': 
-	// 					nextchar(p);  savechar(p, '\b'); break;
-	// 				case 'f': 
-	// 					nextchar(p);  savechar(p, '\f'); break;
-	// 				case 'n': 
-	// 					nextchar(p);  savechar(p, '\n'); break;
-	// 				case 'r': 
-	// 					nextchar(p);  savechar(p, '\r'); break;
-	// 				case 't': 
-	// 					nextchar(p);  savechar(p, '\t'); break;
-	// 				case '/': 
-	// 					nextchar(p);  savechar(p, '/'); break;
-	// 				case '\\': 
-	// 					nextchar(p);  savechar(p, '\\'); break;
-	// 				case '"': 
-	// 					nextchar(p);  savechar(p, '"'); break;
-	// 				case 'u': 
-	// 					parser_parse_utf8esc(p);  break;
-	// 				default:
-	// 					if (p->c != EOF) nextchar(p);
-	// 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 			}
-	// 			break;
-	// 		}
-	// 		case EOF: case '\n': case '\r':
-	// 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-	// 			break;
-	// 		default:
-	// 			savecurr(p);
-	// 			nextchar(p);
-	// 	}
-	// }
 	nextchar(p);	// skip "
 	p->tk.type = TK_STRING;
 	p->tk.strsz = p->buff.sz;
@@ -445,8 +370,13 @@ static void parser_next_token(json_parser_t *p) {
 		case '"':
 			parser_parse_string(p);
 			return;
-		case '-': case '0': case '1': case '2': case '3': case '4':
+		case '-':
+#if defined(__GNUC__)
+		case '0'...'9':
+#else
+		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
+#endif
 			parser_parse_number(p);
 			return;
 		case 'f':
