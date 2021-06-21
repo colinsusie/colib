@@ -128,7 +128,7 @@ local function benchmark()
 	-- dotest("./canada.json", cojson.load, "cojson")
 	dotest("./test_word.json", cjson.decode, "cjson", 30)
 	dotest("./test_word.json", cojson.load, "cojson", 30)
-	dotest("./twitter.json", cojson.load, "cojson", 60)
 	dotest("./twitter.json", cjson.decode, "cjson", 60)
+	dotest("./twitter.json", cojson.load, "cojson", 60)
 end
 benchmark()
