@@ -28,7 +28,7 @@ typedef struct loaddata {
 } loaddata_t;
 
 static inline void l_add_object(loaddata_t *lt) {
-	lua_checkstack(lt->L, 10);
+	lua_checkstack(lt->L, 5);
 	lua_newtable(lt->L);
 }
 static inline void l_begin_pair(loaddata_t *lt, const char *k, size_t sz) {
@@ -307,27 +307,31 @@ static void parser_parse_string(json_parser_t *p) {
 	while (p->c != '"') {
 		switch (p->c) {
 			case '\\': {	// escape
-				int c;
 				nextchar(p);
 				switch (p->c) {
-					case 'b': c = '\b'; goto read_save;
-					case 'f': c = '\f'; goto read_save;
-					case 'n': c = '\n'; goto read_save;
-					case 'r': c = '\r'; goto read_save;
-					case 't': c = '\t'; goto read_save;
-					case '/': c = '/';  goto read_save;
-					case '\\': c = '\\';  goto read_save;
-					case '"': c = '"';  goto read_save;
-					case 'u': parser_parse_utf8esc(p);  goto no_save;
+					case 'b': 
+						nextchar(p);  savechar(p, '\b'); break;
+					case 'f': 
+						nextchar(p);  savechar(p, '\f'); break;
+					case 'n': 
+						nextchar(p);  savechar(p, '\n'); break;
+					case 'r': 
+						nextchar(p);  savechar(p, '\r'); break;
+					case 't': 
+						nextchar(p);  savechar(p, '\t'); break;
+					case '/': 
+						nextchar(p);  savechar(p, '/'); break;
+					case '\\': 
+						nextchar(p);  savechar(p, '\\'); break;
+					case '"': 
+						nextchar(p);  savechar(p, '"'); break;
+					case 'u': 
+						parser_parse_utf8esc(p);  break;
 					default:
-						c = 0;			// compilation warning
-						if (c != EOF) nextchar(p);
+						if (p->c != EOF) nextchar(p);
 						parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 				}
-				read_save: 
-					nextchar(p);
-					savechar(p, c);
-				no_save: break;
+				break;
 			}
 			case EOF: case '\n': case '\r':
 				parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
