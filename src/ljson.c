@@ -408,10 +408,9 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 static void parser_parse_string(json_parser_t *p) {
 	nextchar(p);		// skip "
 	while (likely(p->c != '"')) {
-		if (likely(p->c != '\\' && p->c >= 32)) {
-			savecurr(p);
-			nextchar(p);
-		} else if (p->c == '\\') {
+		if (unlikely(p->c < 32)) {
+			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		} else if (unlikely(p->c == '\\')) {
 			nextchar(p);
 			switch (p->c) {
 				case 'b': 
@@ -436,8 +435,10 @@ static void parser_parse_string(json_parser_t *p) {
 					if (p->c != EOF) nextchar(p);
 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
-		} else
-			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		} else {
+			savecurr(p);
+			nextchar(p);
+		}	
 	}
 	nextchar(p);	// skip "
 	p->tk.type = TK_STRING;
