@@ -371,12 +371,8 @@ static void parser_next_token(json_parser_t *p) {
 			parser_parse_string(p);
 			return;
 		case '-':
-#if defined(__GNUC__)
-		case '0'...'9':
-#else
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
-#endif
 			parser_parse_number(p);
 			return;
 		case 'f':
