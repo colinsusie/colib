@@ -304,31 +304,69 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
 // 加速转义符的判断
-#define Z16 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-static const char escape[256] = {
-	Z16, Z16, 0, 0,'\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '/',
-	Z16, Z16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
-	0, 0,'\b', 0, 0, 0,'\f', 0, 0, 0, 0, 0, 0, 0,'\n', 0,
-	0, 0,'\r', 0,'\t', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16
-};
+// #define Z16 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+// static const char escape[256] = {
+// 	Z16, Z16, 0, 0,'\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '/',
+// 	Z16, Z16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
+// 	0, 0,'\b', 0, 0, 0,'\f', 0, 0, 0, 0, 0, 0, 0,'\n', 0,
+// 	0, 0,'\r', 0,'\t', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+// 	Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16
+// };
+
+// 	nextchar(p);		// skip "
+// 	for (;;) {
+// 		int c = p->c;
+// 		if (unlikely(c == '\\')) {
+// 			nextchar(p);
+// 			int c2 = p->c;
+// 			if (unlikely(c2 == EOF)) {
+// 				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 			} else if (likely(escape[c2])) {
+// 				nextchar(p);
+// 				savechar(p, escape[c2]);
+// 			} else if (unlikely(c2 == 'u')) {
+// 				parser_parse_utf8esc(p);
+// 			} else {
+// 				nextchar(p);
+// 				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 			}
+// 		} else if (unlikely(c == '"')) {
+// 			break;
+// 		} else if (unlikely(c < 32)) {	// EOF, \r, \n, ...
+// 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 		} else {
+// 			savecurr(p);
+// 			nextchar(p);
+// 		}
+// 	}
 
 	nextchar(p);		// skip "
 	for (;;) {
 		int c = p->c;
 		if (unlikely(c == '\\')) {
 			nextchar(p);
-			int c2 = p->c;
-			if (unlikely(c2 == EOF)) {
-				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
-			} else if (likely(escape[c2])) {
-				nextchar(p);
-				savechar(p, escape[c2]);
-			} else if (unlikely(c2 == 'u')) {
-				parser_parse_utf8esc(p);
-			} else {
-				nextchar(p);
-				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			switch (p->c) {
+				case 'b': 
+					nextchar(p);  savechar(p, '\b'); break;
+				case 'f': 
+					nextchar(p);  savechar(p, '\f'); break;
+				case 'n': 
+					nextchar(p);  savechar(p, '\n'); break;
+				case 'r': 
+					nextchar(p);  savechar(p, '\r'); break;
+				case 't': 
+					nextchar(p);  savechar(p, '\t'); break;
+				case '/': 
+					nextchar(p);  savechar(p, '/'); break;
+				case '\\': 
+					nextchar(p);  savechar(p, '\\'); break;
+				case '"': 
+					nextchar(p);  savechar(p, '"'); break;
+				case 'u': 
+					parser_parse_utf8esc(p);  break;
+				default:
+					if (p->c != EOF) nextchar(p);
+					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
 		} else if (unlikely(c == '"')) {
 			break;

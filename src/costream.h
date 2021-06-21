@@ -41,7 +41,7 @@ int _istream_fill(istream_t *stm);
 
 // 取一个字符
 static inline int istream_getc(istream_t *stm) {
-	if (stm->n-- > 0) {
+	if (likely(stm->n-- > 0)) {
 		return (unsigned char)*stm->p++;
 	} else if (_istream_fill(stm)) {
 		stm->n--;
@@ -182,9 +182,12 @@ static inline void _membuffer_grow(membuffer_t *buff, size_t needsz) {
 
 // 压入一个字符
 static inline void membuffer_putc(membuffer_t *buff, int c) {
-	if (buff->sz + 1 > buff->cap)
+	if (likely(buff->sz < buff->cap))
+		buff->b[buff->sz++] = (char)c;
+	else {
 		_membuffer_grow(buff, buff->sz+1);
-	buff->b[buff->sz++] = (char)c;
+		buff->b[buff->sz++] = (char)c;
+	}
 }
 
 // 写入一段内存
