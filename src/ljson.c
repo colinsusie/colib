@@ -169,13 +169,8 @@ static const char* parser_error_content(json_parser_t *p) {
 
 // 忽略空白字符
 static inline void skip_whitespace(json_parser_t *p) {
-	while (1) {
-		switch (p->c) {
-			case '\n':  case '\r':  case '\t': case ' ': break;
-			default: return;
-		}
+	while (p->c == '\n' || p->c == '\r' || p->c == '\t' || p->c == ' ')
 		nextchar(p);
-	}
 }
 
 // 检查单词是不是w
