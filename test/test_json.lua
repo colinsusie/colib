@@ -12,71 +12,75 @@ local codbg = require "dbg"
 local ok, obj, str
 
 -- -- 简单
--- str = [[{
--- 	"name": "tom",
--- 	"age": 30,
--- 	"male": true,
--- 	"false": false,
--- 	"key": null,
--- 	"list": [20, 30, 40],
--- 	"str": "hello world",
--- 	"float": 11.432323
--- }]]
--- obj = cojson.load(str)
--- print(codbg.str(obj))
+str = [[{
+	"name": "tom",
+	"age": 30,
+	"male": true,
+	"false": false,
+	"key": null,
+	"list": [20, 30, 40],
+	"str": "hello world",
+	"float": 11.432323,
+	"float2": 0,
+	"float3": 1231.22342E-5,
+	"float4": 0.22342e+5,
+	"float4": 0.0
+}]]
+obj = cojson.load(str)
+print(codbg.str(obj))
 
--- -- 错误格式
--- str = "falss"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+-- 错误格式
+str = "falss"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "truu"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "truu"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "nulll"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "nulll"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "-0123"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "-0123"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "-0.e+20"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "-0.e+20"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "12e.4"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "12e.4"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "12e3.0"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "12e3.0"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "232424224244334343432243242"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "232424224244334343432243242"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = "3.122E+3423424"
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = "3.122E+3423424"
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = '"a\\"b\\/cxxxxx\\\\xxxx\\bxxxxx\\fxxxx\\nxxx\\txxx\\v"'
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = '"a\\"b\\/cxxxxx\\\\xxxx\\bxxxxx\\fxxxx\\nxxx\\txxx\\v"'
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = '"\\u4E2D\\u534E\\u7F8E"'
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = '"\\u4E2D\\u534E\\u7F8E"'
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = '"\\u4E2"'
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = '"\\u4E2"'
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
--- str = '"\\uEF2H'
--- ok, obj = pcall(cojson.load, str)
--- print(ok, codbg.str(obj))
+str = '"\\uEF2H'
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
 -- -- str = "\"Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. \z
 -- -- Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll\z
@@ -124,8 +128,8 @@ local function benchmark()
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
-	-- dotest("./canada.json", cjson.decode, "cjson")
-	-- dotest("./canada.json", cojson.load, "cojson")
+	dotest("./canada.json", cjson.decode, "cjson", 40)
+	dotest("./canada.json", cojson.load, "cojson", 40)
 	dotest("./test_word.json", cjson.decode, "cjson", 30)
 	dotest("./test_word.json", cojson.load, "cojson", 30)
 	dotest("./twitter.json", cjson.decode, "cjson", 60)

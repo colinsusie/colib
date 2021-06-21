@@ -11,6 +11,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <limits.h>
+#include <float.h>
 #include "lua.h"
 #include "lauxlib.h"
 #include "coconf.h"
@@ -19,7 +20,6 @@
 
 //-----------------------------------------------------------------------------
 // parser
-
 //-------------------------------------
 // 与Lua相关的代码
 typedef struct loaddata {
@@ -90,7 +90,7 @@ typedef enum {
 // token type name
 static const char *token_tname[] = {
 	"{", "}", "[", "]", "<string>", "<float>", "<integer>", 
-	"<boolean>", "<null>", ":", ",", "<eof>", "", 
+	"<boolean>", "<null>", ":", ",", "<eof>", 
 };
 
 // token data
@@ -163,7 +163,7 @@ static const char* parser_error_content(json_parser_t *p) {
 		membuffer_putc(&p->buff, '\0');
 		return p->buff.b;
 	} else {
-		return "unknown";
+		return "";
 	}
 }
 
@@ -183,99 +183,202 @@ static inline int check_word(json_parser_t *p, const char *w) {
 	return 1;
 }
 
-typedef enum {
-	ST_MI,
-	ST_ZE,
-	ST_IN,
-	ST_FR,
-	ST_FS,
-	ST_E1,
-	ST_E2,
-	ST_E3,
-} num_state_e;
+// typedef enum {
+// 	ST_MI,
+// 	ST_ZE,
+// 	ST_IN,
+// 	ST_FR,
+// 	ST_FS,
+// 	ST_E1,
+// 	ST_E2,
+// 	ST_E3,
+// } num_state_e;
 #define invalid_number(p) parser_throw_error(p, "Invalid number, at: %s[:%lu]", parser_error_content(p), currpos(p))
+#define MAXBY10		(int64_t)(INT64_MAX / 10)
+#define MAXLASTD	(int)(INT64_MAX % 10)
+static double powersOf10[] = {10., 100., 1.0e4,  1.0e8,   1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
 
-// 解析数字: TODO: 待优化
+// 解析数字
 static void parser_parse_number(json_parser_t *p) {
-	// 提取数字，并对数字进行正确性验证
-	int isfloat = 0;
-	int st, c;
-	if (p->c == '-') st = ST_MI;
-	else if (p->c == '0') st = ST_ZE;
-	else st = ST_IN;
-	for (;;) {
-		savecurr(p);
+#define c2n(c) ((c) - '0')
+	int64_t in = 0;			// 整型值
+	double db = 0.0;		// 浮点数
+	int isdb = 0;			// 是否是浮点数
+	int neg = 0;			// 是否是负数
+	int eneg = 0;			// 指数部分是否负数
+	int decimals = 0;		// 小数位数
+	int exponent = 0;		// 指数位数
+
+	if (p->c == '-') {	// 负值
+		neg = 1;
 		nextchar(p);
-		c = p->c;
-		switch (st) {
-			case ST_MI: 
-				if (c == '0') st = ST_ZE;
-				else if (c >= '1' && c <= '9') st = ST_IN;
-				else invalid_number(p);
+	}
+	if (unlikely(p->c == '0')) {	// 0开头的后面只能是：.eE或结束
+		nextchar(p);
+	} else if (likely(p->c >= '1' && p->c <= '9')) {
+		in = c2n(p->c);
+		nextchar(p);
+		int d;
+		while (likely(isdigit(p->c))) {
+			d = c2n(p->c);
+			if (unlikely(in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg))) {	// 更大的数字就用浮点数表示
+				isdb = 1;
+				db = (double)in;
 				break;
-			case ST_ZE:
-				isfloat = 1;
-				if (c == '.') st = ST_FR;
-				else if (c == 'e' || c == 'E') st = ST_E1;
-				else goto convert;
-				break;
-			case ST_IN:
-				if (c == '.') st = ST_FR;
-				else if (c >= '0' && c <= '9') st = ST_IN;
-				else if (c == 'e' || c == 'E') st = ST_E1;
-				else goto convert;
-				break;
-			case ST_FR:
-				isfloat = 1;
-				if (c >= '0' && c <= '9') st = ST_FS;
-				else invalid_number(p);
-				break;
-			case ST_FS:
-				if (c >= '0' && c <= '9') st = ST_FS;
-				else if (c == 'e' || c == 'E') st = ST_E1;
-				else goto convert;
-				break;
-			case ST_E1:
-				isfloat = 1;
-				if (c >= '+' && c <= '-') st = ST_E2;
-				else if (c >= '0' && c <= '9') st = ST_E3;
-				else invalid_number(p);
-				break;
-			case ST_E2:
-				if (c >= '0' && c <= '9') st = ST_E3;
-				else invalid_number(p);
-				break;
-			case ST_E3:
-				if (c >= '0' && c <= '9') st = ST_E3;
-				else goto convert;
-				break;
+			}
+			in = in * 10 + d;
+			nextchar(p);
 		}
+	} else {
+		invalid_number(p);		// 只能是0~9开头
 	}
 
-convert:
-	savechar(p, '\0');
-	p->tk.type = TK_INTEGER;
-	p->tk.value.i = 0;
-	char *endptr;
-	errno = 0;
-	if (isfloat) {
-		p->tk.type = TK_FLOAT;
-		double val = strtod(p->buff.b, &endptr);
-		if (p->buff.b + p->buff.sz - 1 != endptr)
-			parser_throw_error(p, "Invalid float, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		else if (errno == ERANGE)
+	if (isdb) {	// 用浮点数表示大数
+		do { // 由于前面已经判断过，所以用do while
+			in = in * 10 + c2n(p->c);
+			nextchar(p);
+		} while (isdigit(p->c));
+	}
+
+	if (p->c == '.') {	// 小数点部分
+		if (!isdb) {
+			isdb = 1;
+			db = (double)in;
+		}
+		nextchar(p);
+		if (unlikely(!isdigit(p->c)))
+			invalid_number(p);  // .后面一定是数字
+		do {
+			db = db * 10. + c2n(p->c);
+			decimals++;
+			nextchar(p);
+		} while (isdigit(p->c));
+		exponent -= decimals;
+	}
+
+	if (p->c == 'e' || p->c == 'E') {	// 指数部分
+		if (!isdb) {		// 有e强制认为是浮点数
+			isdb = 1;
+			db = (double)in;
+		}
+		nextchar(p);
+		eneg = 0;
+		if (p->c == '-') {
+			eneg = 1;
+			nextchar(p);
+		} else if (p->c == '+') {
+			nextchar(p);
+		}
+		if (unlikely(!isdigit(p->c)))
+			invalid_number(p);  // 后面一定是数字
+		int exp = 0;
+		do {
+			exp = exp * 10. + c2n(p->c);
+			nextchar(p);
+		} while (isdigit(p->c));
+		if (eneg) exponent -= exp;
+		else exponent += exp;
+	}
+
+	if (isdb) {
+		if (exponent < DBL_MIN_10_EXP || exponent > DBL_MAX_10_EXP)	// 判断是否溢出
 			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		p->tk.value.d = val;
-		
+		// 计算结果
+		int n = exponent;
+		if (n < 0) n = -n;
+		double p10 = 1.0;
+		double *d;
+		for (d = powersOf10; n != 0; n >>= 1, d += 1) {
+			if (n & 1) p10 *= *d;
+		}
+		if (exponent < 0)
+			db /= p10;
+		else
+			db *= p10;
+		p->tk.type = TK_FLOAT;
+		p->tk.value.d = neg ? -db : db;
 	} else {
 		p->tk.type = TK_INTEGER;
-		long long val = strtoll(p->buff.b, &endptr, 10);
-		if (p->buff.b + p->buff.sz - 1 != endptr)
-			parser_throw_error(p, "Invalid integer, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		else if (errno == ERANGE)
-			parser_throw_error(p, "Integer overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		p->tk.value.i = (int64_t)val;
+		p->tk.value.i = neg ? -in : in;
 	}
+
+// 	// 提取数字，并对数字进行正确性验证
+// 	int isfloat = 0;
+// 	int st, c;
+// 	if (p->c == '-') st = ST_MI;
+// 	else if (p->c == '0') st = ST_ZE;
+// 	else st = ST_IN;
+// 	for (;;) {
+// 		savecurr(p);
+// 		nextchar(p);
+// 		c = p->c;
+// 		switch (st) {
+// 			case ST_MI: 
+// 				if (c == '0') st = ST_ZE;
+// 				else if (c >= '1' && c <= '9') st = ST_IN;
+// 				else invalid_number(p);
+// 				break;
+// 			case ST_ZE:
+// 				isfloat = 1;
+// 				if (c == '.') st = ST_FR;
+// 				else if (c == 'e' || c == 'E') st = ST_E1;
+// 				else goto convert;
+// 				break;
+// 			case ST_IN:
+// 				if (c == '.') st = ST_FR;
+// 				else if (c >= '0' && c <= '9') st = ST_IN;
+// 				else if (c == 'e' || c == 'E') st = ST_E1;
+// 				else goto convert;
+// 				break;
+// 			case ST_FR:
+// 				isfloat = 1;
+// 				if (c >= '0' && c <= '9') st = ST_FS;
+// 				else invalid_number(p);
+// 				break;
+// 			case ST_FS:
+// 				if (c >= '0' && c <= '9') st = ST_FS;
+// 				else if (c == 'e' || c == 'E') st = ST_E1;
+// 				else goto convert;
+// 				break;
+// 			case ST_E1:
+// 				isfloat = 1;
+// 				if (c >= '+' && c <= '-') st = ST_E2;
+// 				else if (c >= '0' && c <= '9') st = ST_E3;
+// 				else invalid_number(p);
+// 				break;
+// 			case ST_E2:
+// 				if (c >= '0' && c <= '9') st = ST_E3;
+// 				else invalid_number(p);
+// 				break;
+// 			case ST_E3:
+// 				if (c >= '0' && c <= '9') st = ST_E3;
+// 				else goto convert;
+// 				break;
+// 		}
+// 	}
+
+// convert:
+// 	savechar(p, '\0');
+// 	char *endptr;
+// 	errno = 0;
+// 	if (isfloat) {
+// 		p->tk.type = TK_FLOAT;
+// 		double val = strtod(p->buff.b, &endptr);
+// 		if (p->buff.b + p->buff.sz - 1 != endptr)
+// 			parser_throw_error(p, "Invalid float, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 		else if (errno == ERANGE)
+// 			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 		p->tk.value.d = val;
+		
+// 	} else {
+// 		p->tk.type = TK_INTEGER;
+// 		long long val = strtoll(p->buff.b, &endptr, 10);
+// 		if (p->buff.b + p->buff.sz - 1 != endptr)
+// 			parser_throw_error(p, "Invalid integer, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 		else if (errno == ERANGE)
+// 			parser_throw_error(p, "Integer overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
+// 		p->tk.value.i = (int64_t)val;
+// 	}
 }
 
 // 解析utf8转义
