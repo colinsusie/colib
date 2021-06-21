@@ -8,6 +8,7 @@ int _istream_fill(istream_t *stm) {
 	if (b && sz > 0) {
 		stm->bn += sz;
 		stm->n = sz;
+		stm->b = b;
 		stm->p = b;
 		return 1;
 	} else {

@@ -19,6 +19,7 @@ typedef const char* (*stream_reader_f)(void *ud, size_t *sz);
 // 输入流
 typedef struct istream {
 	const char *p;		// 当前buff块的读取位置
+	const char *b;		// 当前buff块
 	size_t n;			// 当前buff块还剩多少
 	size_t bn;			// 已获得的buff块大小
 	stream_reader_f reader;
@@ -31,6 +32,7 @@ static inline void istream_init(istream_t *stm, stream_reader_f reader,  void *u
 	stm->reader = reader;
 	stm->ud = ud;
 	stm->p = NULL;
+	stm->b = NULL;
 	stm->n = 0;
 	stm->bn = 0;
 }
@@ -186,7 +188,7 @@ static inline void membuffer_putc(membuffer_t *buff, int c) {
 }
 
 // 写入一段内存
-static inline void membuffer_putb(membuffer_t *buff, void *b, size_t sz) {
+static inline void membuffer_putb(membuffer_t *buff, const void *b, size_t sz) {
 	if (buff->sz + sz > buff->cap)
 		_membuffer_grow(buff, buff->sz+sz);
 	memcpy(buff->b + buff->sz, b, sz);

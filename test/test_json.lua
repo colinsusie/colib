@@ -7,6 +7,7 @@ end
 package.path = package.path ..";../colib/?.lua"
 
 local cojson = require "json"
+local cjson = require "cjson"
 local codbg = require "dbg"
 local ok, obj, str
 
@@ -121,12 +122,14 @@ local function benchmark()
 		local f = io.open(file, 'rb')
 		local jsontext = f:read('a')
 		stopwatch:start()
-		for i = 1, 10 do
+		for i = 1, 30 do
 			func(jsontext)
 		end
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
+	dotest("./twitter.json", cjson.decode, "cjson")
+	dotest("./canada.json", cjson.decode, "cjson")
 	dotest("./twitter.json", cojson.load, "cojson")
 	dotest("./canada.json", cojson.load, "cojson")
 end
