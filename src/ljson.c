@@ -407,9 +407,11 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
 	nextchar(p);		// skip "
-	for (;;) {
-		int c = p->c;
-		if (unlikely(c == '\\')) {
+	while (likely(p->c != '"')) {
+		if (likely(p->c != '\\' && p->c >= 32)) {
+			savecurr(p);
+			nextchar(p);
+		} else if (p->c == '\\') {
 			nextchar(p);
 			switch (p->c) {
 				case 'b': 
@@ -434,14 +436,8 @@ static void parser_parse_string(json_parser_t *p) {
 					if (p->c != EOF) nextchar(p);
 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
-		} else if (unlikely(c == '"')) {
-			break;
-		} else if (unlikely(c < 32)) {	// EOF, \r, \n, ...
+		} else
 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		} else {
-			savecurr(p);
-			nextchar(p);
-		}
 	}
 	nextchar(p);	// skip "
 	p->tk.type = TK_STRING;

@@ -24,7 +24,11 @@ str = [[{
 	"float2": 0,
 	"float3": 1231.22342E-5,
 	"float4": 0.22342e+5,
-	"float4": 0.0
+	"float4": 0.0,
+	"float5": 9223372036854775807,
+	"float6": -9223372036854775808,
+	"float7": 92233720368547758423,
+	"float8": 1e+307
 }]]
 obj = cojson.load(str)
 print(codbg.str(obj))
@@ -128,8 +132,8 @@ local function benchmark()
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
-	dotest("./canada.json", cjson.decode, "cjson", 40)
-	dotest("./canada.json", cojson.load, "cojson", 40)
+	dotest("./canada.json", cjson.decode, "cjson", 20)
+	dotest("./canada.json", cojson.load, "cojson", 20)
 	dotest("./test_word.json", cjson.decode, "cjson", 30)
 	dotest("./test_word.json", cojson.load, "cojson", 30)
 	dotest("./twitter.json", cjson.decode, "cjson", 60)
