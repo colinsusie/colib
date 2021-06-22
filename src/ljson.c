@@ -1,5 +1,5 @@
 /**
- * Json解析器：只支持utf-8格式
+ * json解析器：只支持utf-8格式
  */
 #define LUA_LIB
 #include <stdlib.h>
@@ -22,61 +22,55 @@
 // parser
 //-------------------------------------
 // 与Lua相关的代码
-typedef struct loaddata {
-	lua_State *L;
-	filereader_t *freader;
-} loaddata_t;
 
-static inline void l_add_object(loaddata_t *lt) {
-	lua_checkstack(lt->L, 5);
-	lua_newtable(lt->L);
+static inline void l_add_object(lua_State *L) {
+	lua_checkstack(L, 5);
+	lua_newtable(L);
 }
-static inline void l_begin_pair(loaddata_t *lt, const char *k, size_t sz) {
-	lua_pushlstring(lt->L, k, sz);
+static inline void l_begin_pair(lua_State *L, const char *k, size_t sz) {
+	lua_pushlstring(L, k, sz);
 }
-static inline void l_end_pair(loaddata_t *lt) {
-	lua_rawset(lt->L, -3);
+static inline void l_end_pair(lua_State *L) {
+	lua_rawset(L, -3);
 }
-static inline void l_add_array(loaddata_t *lt) {
-	lua_checkstack(lt->L, 10);
-	lua_newtable(lt->L);
+static inline void l_add_array(lua_State *L) {
+	lua_checkstack(L, 10);
+	lua_newtable(L);
 }
-static inline void l_add_index(loaddata_t *lt, int i) {
-	lua_rawseti(lt->L, -2, i+1);
+static inline void l_add_index(lua_State *L, int i) {
+	lua_rawseti(L, -2, i+1);
 }
-static inline void l_add_string(loaddata_t *lt, const char *s, size_t sz) {
-	lua_pushlstring(lt->L, s, sz);
+static inline void l_add_string(lua_State *L, const char *s, size_t sz) {
+	lua_pushlstring(L, s, sz);
 }
-static inline void l_add_float(loaddata_t *lt, double f) {
-	lua_pushnumber(lt->L, (lua_Number)f);
+static inline void l_add_float(lua_State *L, double f) {
+	lua_pushnumber(L, (lua_Number)f);
 }
-static inline void l_add_integer(loaddata_t *lt, int64_t i) {
-	lua_pushinteger(lt->L, (lua_Integer)i);
+static inline void l_add_integer(lua_State *L, int64_t i) {
+	lua_pushinteger(L, (lua_Integer)i);
 }
-static inline void l_add_boolean(loaddata_t *lt, int b) {
-	lua_pushboolean(lt->L, b);
+static inline void l_add_boolean(lua_State *L, int b) {
+	lua_pushboolean(L, b);
 }
-static inline void l_add_null(loaddata_t *lt) {
-	lua_pushlightuserdata(lt->L, NULL);
+static inline void l_add_null(lua_State *L) {
+	lua_pushlightuserdata(L, NULL);
 }
-static inline void l_error(loaddata_t *lt, const char *msg) {
-	if (lt->freader)	// 先关掉文件流
-		ifilestream_close(lt->freader);
-	luaL_error(lt->L, msg);
+static inline void l_error(lua_State *L, const char *msg) {
+	luaL_error(L, msg);
 }
 
 // 解析事件
-#define ON_ADD_OBJECT(ud) l_add_object((loaddata_t*)(ud))
-#define ON_BEGIN_PAIR(ud, k, sz) l_begin_pair((loaddata_t*)(ud), k, sz)
-#define ON_END_PAIR(ud) l_end_pair((loaddata_t*)(ud))
-#define ON_ADD_ARRAY(ud) l_add_array((loaddata_t*)(ud))
-#define ON_ADD_INDEX(ud, i) l_add_index((loaddata_t*)(ud), i)
-#define ON_ADD_STRING(ud, s, sz) l_add_string((loaddata_t*)(ud), s, sz)
-#define ON_ADD_FLOAT(ud, f) l_add_float((loaddata_t*)(ud), f)
-#define ON_ADD_INTEGER(ud, i) l_add_integer((loaddata_t*)(ud), i)
-#define ON_ADD_BOOLEAN(ud, b) l_add_boolean((loaddata_t*)(ud), b)
-#define ON_ADD_NULL(ud) l_add_null((loaddata_t*)(ud))
-#define ON_ERROR(ud, msg) l_error((loaddata_t*)(ud), msg)
+#define ON_ADD_OBJECT(ud) l_add_object((lua_State*)(ud))
+#define ON_BEGIN_PAIR(ud, k, sz) l_begin_pair((lua_State*)(ud), k, sz)
+#define ON_END_PAIR(ud) l_end_pair((lua_State*)(ud))
+#define ON_ADD_ARRAY(ud) l_add_array((lua_State*)(ud))
+#define ON_ADD_INDEX(ud, i) l_add_index((lua_State*)(ud), i)
+#define ON_ADD_STRING(ud, s, sz) l_add_string((lua_State*)(ud), s, sz)
+#define ON_ADD_FLOAT(ud, f) l_add_float((lua_State*)(ud), f)
+#define ON_ADD_INTEGER(ud, i) l_add_integer((lua_State*)(ud), i)
+#define ON_ADD_BOOLEAN(ud, b) l_add_boolean((lua_State*)(ud), b)
+#define ON_ADD_NULL(ud) l_add_null((lua_State*)(ud))
+#define ON_ERROR(ud, msg) l_error((lua_State*)(ud), msg)
 
 //-------------------------------------
 // 解析json，这部分代码与Lua无关，是通用的解析器；如果要移植这部分代码，需要把 //>>> 开头的注释去掉
@@ -110,9 +104,9 @@ typedef struct {
 
 // json解析器
 typedef struct {
-	int c;				// 当前解析到的字符
 	json_token_t tk;	// 当前的Token
-	istream_t *stm;		// 提供内容的流
+	const char *str;	// json字符串
+	const char *ptr;	// json字符串解析指针
 	void *ud;			// 解析事件的用户数据
 	membuffer_t buff;	// 临时缓存
 	uint16_t curdepth;	// 当前层次
@@ -121,12 +115,12 @@ typedef struct {
 	//>>>jmp_buf jb;			// 用于实现从解析中出错直接跳出
 } json_parser_t;
 
-static inline void parser_init(json_parser_t *parser, istream_t *stm, void *ud, 
+static inline void parser_init(json_parser_t *parser, const char *str, void *ud, 
 	uint16_t maxdepth) {
 	membuffer_init(&parser->buff);
-	parser->stm = stm;
+	parser->str = str;
+	parser->ptr = str;
 	parser->ud = ud;
-	parser->c = istream_getc(stm);
 	parser->maxdepth = maxdepth;
 	parser->curdepth = 0;
 }
@@ -148,59 +142,28 @@ static void parser_throw_error(json_parser_t *parser, const char *fmt, ...) {
 }
 
 // 辅助宏
-#define nextchar(p) ((p)->c = istream_getc(p->stm))
+#define peek_and_next(p) (*(p)->ptr++)
+#define peek(p) (*(p)->ptr)
+#define next(p) ((p)->ptr++)
 #define savechar(p, c) membuffer_putc(&(p)->buff, c)
-#define savecurr(p) savechar((p), (p)->c)
-#define currpos(p) (unsigned long)istream_pos((p)->stm)
+#define currpos(p) (unsigned long)((p)->ptr - (p)->str)
 
 // 取解析到的错误内容
 static const char* parser_error_content(json_parser_t *p) {
-	if (p->stm->p) {
-		int n = (int)(p->stm->p - p->stm->b);
-		if (n > 40) n = 40;	// 调整这个数获得更长的内容
-		membuffer_reset(&p->buff);
-		membuffer_putb(&p->buff, p->stm->p - n, n);
-		membuffer_putc(&p->buff, '\0');
-		return p->buff.b;
-	} else {
-		return "";
-	}
+	int n = currpos(p);
+	if (n > 50) n = 50;	// 调整这个数获得更长的内容
+	membuffer_reset(&p->buff);
+	membuffer_putb(&p->buff, p->ptr - n, n);
+	membuffer_putc(&p->buff, '\0');
+	return p->buff.b;
 }
 
-// 忽略空白字符
-static inline void skip_whitespace(json_parser_t *p) {
-	while (p->c == '\n' || p->c == '\r' || p->c == '\t' || p->c == ' ')
-		nextchar(p);
-}
-
-// 检查单词是不是w
-static inline int check_word(json_parser_t *p, const char *w) {
-	int c;
-	while ((c = *w++) != '\0') {
-		if (p->c != c) return 0;
-		nextchar(p);
-	}
-	return 1;
-}
-
-// typedef enum {
-// 	ST_MI,
-// 	ST_ZE,
-// 	ST_IN,
-// 	ST_FR,
-// 	ST_FS,
-// 	ST_E1,
-// 	ST_E2,
-// 	ST_E3,
-// } num_state_e;
+// 解析数字
 #define invalid_number(p) parser_throw_error(p, "Invalid number, at: %s[:%lu]", parser_error_content(p), currpos(p))
 #define MAXBY10		(int64_t)(INT64_MAX / 10)
 #define MAXLASTD	(int)(INT64_MAX % 10)
 static double powersOf10[] = {10., 100., 1.0e4,  1.0e8,   1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
-
-// 解析数字
-static void parser_parse_number(json_parser_t *p) {
-#define c2n(c) ((c) - '0')
+static void parser_parse_number(json_parser_t *p, char ch) {
 	int64_t in = 0;			// 整型值
 	double db = 0.0;		// 浮点数
 	int isdb = 0;			// 是否是浮点数
@@ -209,73 +172,81 @@ static void parser_parse_number(json_parser_t *p) {
 	int decimals = 0;		// 小数位数
 	int exponent = 0;		// 指数位数
 
-	if (p->c == '-') {	// 负值
+	if (ch == '-') {	// 负值
 		neg = 1;
-		nextchar(p);
+		ch = peek_and_next(p);
 	}
-	if (unlikely(p->c == '0')) {	// 0开头的后面只能是：.eE或结束
-		nextchar(p);
-	} else if (likely(p->c >= '1' && p->c <= '9')) {
-		in = c2n(p->c);
-		nextchar(p);
+	if (unlikely(ch == '0')) {	// 0开头的后面只能是：.eE或结束
+		ch = peek(p);
+	} else if (likely(ch >= '1' && ch <= '9')) {
+		in = ch - '0';
+		ch = peek(p);
 		int d;
-		while (likely(isdigit(p->c))) {
-			d = c2n(p->c);
+		while (likely(isdigit(ch))) {
+			next(p);
+			d = ch - '0';
 			if (unlikely(in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg))) {	// 更大的数字就用浮点数表示
 				isdb = 1;
 				db = (double)in;
 				break;
 			}
 			in = in * 10 + d;
-			nextchar(p);
+			ch = peek(p);
 		}
 	} else {
 		invalid_number(p);		// 只能是0~9开头
 	}
 
 	if (isdb) {	// 用浮点数表示大数
-		do { // 由于前面已经判断过，所以用do while
-			in = in * 10 + c2n(p->c);
-			nextchar(p);
-		} while (isdigit(p->c));
+		while (isdigit(ch)) {
+			next(p);
+			in = in * 10 + (ch - '0');
+			ch = peek(p);
+		}
 	}
 
-	if (p->c == '.') {	// 小数点部分
+	if (ch == '.') {	// 小数点部分
 		if (!isdb) {
 			isdb = 1;
 			db = (double)in;
 		}
-		nextchar(p);
-		if (unlikely(!isdigit(p->c)))
+		next(p);
+		ch = peek(p);
+		if (unlikely(!isdigit(ch)))
 			invalid_number(p);  // .后面一定是数字
 		do {
-			db = db * 10. + c2n(p->c);
+			next(p);
+			db = db * 10. + (ch - '0');
 			decimals++;
-			nextchar(p);
-		} while (isdigit(p->c));
+			ch = peek(p);
+		} while (isdigit(ch));
 		exponent -= decimals;
 	}
 
-	if (p->c == 'e' || p->c == 'E') {	// 指数部分
+	if (ch == 'e' || ch == 'E') {	// 指数部分
 		if (!isdb) {		// 有e强制认为是浮点数
 			isdb = 1;
 			db = (double)in;
 		}
-		nextchar(p);
+		next(p);
+		ch = peek(p);
 		eneg = 0;
-		if (p->c == '-') {
+		if (ch == '-') {
 			eneg = 1;
-			nextchar(p);
-		} else if (p->c == '+') {
-			nextchar(p);
+			next(p);
+			ch = peek(p);
+		} else if (ch == '+') {
+			next(p);
+			ch = peek(p);
 		}
-		if (unlikely(!isdigit(p->c)))
+		if (unlikely(!isdigit(ch)))
 			invalid_number(p);  // 后面一定是数字
 		int exp = 0;
 		do {
-			exp = exp * 10. + c2n(p->c);
-			nextchar(p);
-		} while (isdigit(p->c));
+			next(p);
+			exp = exp * 10. + (ch - '0');
+			ch = peek(p);
+		} while (isdigit(ch));
 		if (eneg) exponent -= exp;
 		else exponent += exp;
 	}
@@ -301,147 +272,66 @@ static void parser_parse_number(json_parser_t *p) {
 		p->tk.type = TK_INTEGER;
 		p->tk.value.i = neg ? -in : in;
 	}
-
-// 使用strtod, strtoll的版本，因为是先取buff再转换，性能差比较多
-// 	// 提取数字，并对数字进行正确性验证
-// 	int isfloat = 0;
-// 	int st, c;
-// 	if (p->c == '-') st = ST_MI;
-// 	else if (p->c == '0') st = ST_ZE;
-// 	else st = ST_IN;
-// 	for (;;) {
-// 		savecurr(p);
-// 		nextchar(p);
-// 		c = p->c;
-// 		switch (st) {
-// 			case ST_MI: 
-// 				if (c == '0') st = ST_ZE;
-// 				else if (c >= '1' && c <= '9') st = ST_IN;
-// 				else invalid_number(p);
-// 				break;
-// 			case ST_ZE:
-// 				isfloat = 1;
-// 				if (c == '.') st = ST_FR;
-// 				else if (c == 'e' || c == 'E') st = ST_E1;
-// 				else goto convert;
-// 				break;
-// 			case ST_IN:
-// 				if (c == '.') st = ST_FR;
-// 				else if (c >= '0' && c <= '9') st = ST_IN;
-// 				else if (c == 'e' || c == 'E') st = ST_E1;
-// 				else goto convert;
-// 				break;
-// 			case ST_FR:
-// 				isfloat = 1;
-// 				if (c >= '0' && c <= '9') st = ST_FS;
-// 				else invalid_number(p);
-// 				break;
-// 			case ST_FS:
-// 				if (c >= '0' && c <= '9') st = ST_FS;
-// 				else if (c == 'e' || c == 'E') st = ST_E1;
-// 				else goto convert;
-// 				break;
-// 			case ST_E1:
-// 				isfloat = 1;
-// 				if (c >= '+' && c <= '-') st = ST_E2;
-// 				else if (c >= '0' && c <= '9') st = ST_E3;
-// 				else invalid_number(p);
-// 				break;
-// 			case ST_E2:
-// 				if (c >= '0' && c <= '9') st = ST_E3;
-// 				else invalid_number(p);
-// 				break;
-// 			case ST_E3:
-// 				if (c >= '0' && c <= '9') st = ST_E3;
-// 				else goto convert;
-// 				break;
-// 		}
-// 	}
-
-// convert:
-// 	savechar(p, '\0');
-// 	char *endptr;
-// 	errno = 0;
-// 	if (isfloat) {
-// 		p->tk.type = TK_FLOAT;
-// 		double val = strtod(p->buff.b, &endptr);
-// 		if (p->buff.b + p->buff.sz - 1 != endptr)
-// 			parser_throw_error(p, "Invalid float, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 		else if (errno == ERANGE)
-// 			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 		p->tk.value.d = val;
-		
-// 	} else {
-// 		p->tk.type = TK_INTEGER;
-// 		long long val = strtoll(p->buff.b, &endptr, 10);
-// 		if (p->buff.b + p->buff.sz - 1 != endptr)
-// 			parser_throw_error(p, "Invalid integer, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 		else if (errno == ERANGE)
-// 			parser_throw_error(p, "Integer overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-// 		p->tk.value.i = (int64_t)val;
-// 	}
 }
 
 // 解析utf8转义
 static void parser_parse_utf8esc(json_parser_t *p) {
-	nextchar(p);		// skip u
-	uint32_t cp;
-	int hex[4];
-	int i, c;
+	uint32_t cp = 0;
+	char ch;
+	int i, hex;
+	// hex[4]
 	for (i = 0; i < 4; ++i) {
-		c = p->c;
-		if (!isxdigit(c)) {
-			if (c != EOF) nextchar(p);
+		ch = peek_and_next(p);
+		if (!isxdigit(ch)) {
 			parser_throw_error(p, "Invalid utf8 escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 		}
-		hex[i] = isdigit(c) ? c - '0' : (tolower(c) - 'a') + 10;
-		nextchar(p);
+		hex = isdigit(ch) ? ch - '0' : ((ch | 0x20) - 'a') + 10;
+		cp |= hex << (12 - (i << 2));
+		// hex[i] = (isdigit(ch) ? ch - '0' : ((ch | 0x20) - 'a') + 10);
 	}
-	cp = (hex[0] << 12) | (hex[1] << 8) | (hex[2] << 4) | hex[3];
+	// cp = (hex[0] << 12) | (hex[1] << 8) | (hex[2] << 4) | hex[3];
 
 	char buff[UTF8BUFFSZ];
 	int n = coutf8_encode(buff, cp);
-	for (; n > 0; n--)
-		savechar(p, buff[UTF8BUFFSZ - n]);
+	membuffer_putb(&p->buff, buff + (UTF8BUFFSZ - n), n);
 }
 
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
-	nextchar(p);		// skip "
-	while (likely(p->c != '"')) {
-		if (unlikely(p->c < 32)) {
+	char ch = peek_and_next(p);
+	while (likely(ch != '"')) {
+		if (unlikely(ch == '\0' || ch == '\n' || ch == '\r')) {
 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		} else if (unlikely(p->c == '\\')) {
-			nextchar(p);
-			switch (p->c) {
+		} else if (unlikely(ch == '\\')) {
+			ch = peek_and_next(p);
+			switch (ch) {
 				case 'b': 
-					nextchar(p);  savechar(p, '\b'); break;
+					savechar(p, '\b'); break;
 				case 'f': 
-					nextchar(p);  savechar(p, '\f'); break;
+					savechar(p, '\f'); break;
 				case 'n': 
-					nextchar(p);  savechar(p, '\n'); break;
+					savechar(p, '\n'); break;
 				case 'r': 
-					nextchar(p);  savechar(p, '\r'); break;
+					savechar(p, '\r'); break;
 				case 't': 
-					nextchar(p);  savechar(p, '\t'); break;
+					savechar(p, '\t'); break;
 				case '/': 
-					nextchar(p);  savechar(p, '/'); break;
+					savechar(p, '/'); break;
 				case '\\': 
-					nextchar(p);  savechar(p, '\\'); break;
+					savechar(p, '\\'); break;
 				case '"': 
-					nextchar(p);  savechar(p, '"'); break;
+					savechar(p, '"'); break;
 				case 'u': 
-					parser_parse_utf8esc(p);  break;
+					parser_parse_utf8esc(p); break;
 				default:
-					if (p->c != EOF) nextchar(p);
 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
+			ch = peek_and_next(p);
 		} else {
-			savecurr(p);
-			nextchar(p);
+			savechar(p, ch);
+			ch = peek_and_next(p);
 		}	
 	}
-	nextchar(p);	// skip "
 	p->tk.type = TK_STRING;
 	p->tk.strsz = p->buff.sz;
 	p->tk.value.s = p->buff.b;
@@ -449,23 +339,23 @@ static void parser_parse_string(json_parser_t *p) {
 
 // 取下一个token
 static void parser_next_token(json_parser_t *p) {
-	skip_whitespace(p);
+	// 删除空白字符
+	char ch = peek_and_next(p);
+	while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+		ch = peek_and_next(p);
+
 	membuffer_reset(&p->buff);
-	switch (p->c) {
+	switch (ch) {
 		case '{':
-			nextchar(p); 
 			p->tk.type = TK_OBJ_BEGIN;
 			return;
 		case '}':
-			nextchar(p); 
 			p->tk.type = TK_OBJ_END;
 			return; 
 		case '[':
-			nextchar(p); 
 			p->tk.type = TK_ARY_BEGIN;
 			return;
 		case ']':
-			nextchar(p); 
 			p->tk.type = TK_ARY_END;
 			return;
 		case '"':
@@ -474,43 +364,45 @@ static void parser_next_token(json_parser_t *p) {
 		case '-':
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
-			parser_parse_number(p);
+			parser_parse_number(p, ch);
 			return;
 		case 'f':
-			if (check_word(p, "false")) {
+			if (peek_and_next(p) == 'a') 
+			if (peek_and_next(p) == 'l')
+			if (peek_and_next(p) == 's')
+			if (peek_and_next(p) == 'e') {
 				p->tk.type = TK_BOOLEAN;
 				p->tk.value.b = 0;
 				return;
-			} else {
-				parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
-				return;
 			}
+			parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			return;
 		case 't':
-			if (check_word(p, "true")) {
+			if (peek_and_next(p) == 'r') 
+			if (peek_and_next(p) == 'u')
+			if (peek_and_next(p) == 'e') {
 				p->tk.type = TK_BOOLEAN;
 				p->tk.value.b = 1;
 				return;
-			} else {
-				parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
-				return;
 			}
+			parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			return;
 		case 'n':
-			if (check_word(p, "null")) {
+			if (peek_and_next(p) == 'u') 
+			if (peek_and_next(p) == 'l')
+			if (peek_and_next(p) == 'l') {
 				p->tk.type = TK_NULL;
 				return;
-			} else {
-				parser_throw_error(p, "Invalid null, at: %s[:%lu]", parser_error_content(p), currpos(p));
-				return;
 			}
+			parser_throw_error(p, "Invalid null, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			return;
 		case ':':
-			nextchar(p); 
 			p->tk.type = TK_COLON;
 			return;
 		case ',':
-			nextchar(p); 
 			p->tk.type = TK_COMMA;
 			return;
-		case EOF:
+		case '\0':
 			p->tk.type = TK_END;
 			return;
 		default:
@@ -619,9 +511,9 @@ static void parser_parse_value(json_parser_t *p) {
 }
 
 // 解析json文本
-static void parser_do_parse(istream_t *stm, void *ud, uint16_t maxdepth) {
+static void parser_do_parse(const char *str, void *ud, uint16_t maxdepth) {
 	json_parser_t parser;
-	parser_init(&parser, stm, ud, maxdepth);
+	parser_init(&parser, str, ud, maxdepth);
 	//>>>if (setjmp(parser.jb) == 0) {
 		parser_next_token(&parser);
 		parser_parse_value(&parser);
@@ -646,30 +538,11 @@ static void parser_do_parse(istream_t *stm, void *ud, uint16_t maxdepth) {
 #define DEF_FILE_BUFFSZ 4096
 
 // 从字符串加载：json.load(str) -> obj
+// 要求字符串必须以0结尾
 static int l_load(lua_State *L) {
-	size_t sz;
-	const char *str = luaL_checklstring(L, 1, &sz);
+	const char *str = luaL_checkstring(L, 1);
 	uint16_t maxdepth = (uint16_t)luaL_optinteger(L, 2, DEF_MAX_DEPTH);
-	istream_t stm;
-	strreader_t sreader;
-	istrstream_init(&stm, &sreader, str, sz);
-	loaddata_t lt = {L, NULL};
-	parser_do_parse(&stm, &lt, maxdepth);
-	return 1;
-}
-
-// 从文件加载：json.loadf(fname) -> obj
-static int l_loadf(lua_State *L) {
-	const char *fname = luaL_checkstring(L, 1);
-	uint16_t maxdepth = (uint16_t)luaL_optinteger(L, 2, DEF_MAX_DEPTH);
-	istream_t stm;
-	filereader_t freader;
-	if (!ifilestream_initf(&stm, &freader, fname, DEF_FILE_BUFFSZ))
-		luaL_error(L, "loadf failed: %s", strerror(errno));
-	ifilestream_skipbom(&freader);
-	loaddata_t lt = {L, &freader};
-	parser_do_parse(&stm, &lt, maxdepth);
-	ifilestream_close(&freader);
+	parser_do_parse(str, L, maxdepth);
 	return 1;
 }
 
@@ -678,16 +551,9 @@ static int l_dump(lua_State *L) {
 	return 0;
 }
 
-// 保存到文件：json.dumpf(obj, fname)
-static int l_dumpf(lua_State *L) {
-	return 0;
-}
-
 static const luaL_Reg lib[] = {
 	{"load", l_load},
-	{"loadf", l_loadf},
 	{"dump", l_dump},
-	{"dumpf", l_dumpf},
 	{NULL, NULL},
 };
 

@@ -23,12 +23,15 @@ str = [[{
 	"float": 11.432323,
 	"float2": 0,
 	"float3": 1231.22342E-5,
-	"float4": 0.22342e+5,
 	"float4": 0.0,
 	"float5": 9223372036854775807,
 	"float6": -9223372036854775808,
 	"float7": 92233720368547758423,
 	"float8": 1e+307,
+	"float9": -23424,
+	"float10": -111.222e+4,
+	"float11": -1.222e-5,
+	"float12": 1.2e+5,
 	"str": "未来\"是美好的"
 }]]
 obj = cojson.load(str)
@@ -114,11 +117,7 @@ str = [[
 ok, obj = pcall(cojson.load, str, 2)
 print(ok, codbg.str(obj))
 
-local function loadfromefile()
-	print("load test.json")
-	cojson.loadf("./test.json")
-end
-loadfromefile()
+-- do return end
 
 local function benchmark()
 	local stopwatch = codbg.stopwatch()
@@ -134,28 +133,30 @@ local function benchmark()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
 	dotest("./test_float.json", cojson.load, "cojson", 30)
-	dotest("./test_int.json", cojson.load, "cojson", 30)
-	dotest("./test_string.json", cojson.load, "cojson", 90)
-	dotest("./test_string2.json", cojson.load, "cojson", 50)
-	dotest("./test_string3.json", cojson.load, "cojson", 50)
-	dotest("./test_word.json", cojson.load, "cojson", 200)
-
 	dotest("./test_float.json", cjson.decode, "cjson", 30)
+	
+	dotest("./test_int.json", cojson.load, "cojson", 30)
 	dotest("./test_int.json", cjson.decode, "cjson", 30)
+
+	dotest("./test_string.json", cojson.load, "cojson", 90)
 	dotest("./test_string.json", cjson.decode, "cjson", 90)
+
+	dotest("./test_string2.json", cojson.load, "cojson", 50)
 	dotest("./test_string2.json", cjson.decode, "cjson", 50)
+
+	dotest("./test_string3.json", cojson.load, "cojson", 50)
 	dotest("./test_string3.json", cjson.decode, "cjson", 50)
+
+	dotest("./test_word.json", cojson.load, "cojson", 200)
 	dotest("./test_word.json", cjson.decode, "cjson", 200)
 
-	-- dotest("./canada.json", cjson.decode, "cjson", 20)
-	-- dotest("./canada.json", cojson.load, "cojson", 20)
-	-- dotest("./test_word.json", cjson.decode, "cjson", 300)
-	-- dotest("./test_word.json", cojson.load, "cojson", 300)
-	-- dotest("./twitter.json", cjson.decode, "cjson", 60)
-	-- dotest("./twitter.json", cojson.load, "cojson", 60)
-	-- dotest("./citm_catalog.json", cjson.decode, "cjson", 30)
-	-- dotest("./citm_catalog.json", cojson.load, "cojson", 30)
-	-- dotest("./player.json", cjson.decode, "cjson", 200)
-	-- dotest("./player.json", cojson.load, "cojson", 200)
+	dotest("./twitter.json", cojson.load, "cojson", 60)
+	dotest("./twitter.json", cjson.decode, "cjson", 60)
+
+	dotest("./citm_catalog.json", cojson.load, "cojson", 30)
+	dotest("./citm_catalog.json", cjson.decode, "cjson", 30)
+	
+	dotest("./player.json", cojson.load, "cojson", 200)
+	dotest("./player.json", cjson.decode, "cjson", 200)
 end
 benchmark()
