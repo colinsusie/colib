@@ -302,6 +302,7 @@ static void parser_parse_number(json_parser_t *p) {
 		p->tk.value.i = neg ? -in : in;
 	}
 
+// 使用strtod, strtoll的版本，因为是先取buff再转换，性能差比较多
 // 	// 提取数字，并对数字进行正确性验证
 // 	int isfloat = 0;
 // 	int st, c;
@@ -634,7 +635,7 @@ static void parser_do_parse(istream_t *stm, void *ud, uint16_t maxdepth) {
 }
 
 //-----------------------------------------------------------------------------
-// dump
+// dumper
 
 
 

@@ -28,7 +28,8 @@ str = [[{
 	"float5": 9223372036854775807,
 	"float6": -9223372036854775808,
 	"float7": 92233720368547758423,
-	"float8": 1e+307
+	"float8": 1e+307,
+	"str": "未来\"是美好的"
 }]]
 obj = cojson.load(str)
 print(codbg.str(obj))
@@ -86,38 +87,38 @@ str = '"\\uEF2H'
 ok, obj = pcall(cojson.load, str)
 print(ok, codbg.str(obj))
 
--- -- str = "\"Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. \z
--- -- Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll\z
--- -- be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --  the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating the\z
--- --  be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --  be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --  be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --  be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --  be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
--- --   information in the next weeks. It'll be broken occasionally.\""
--- -- ok, obj = pcall(cojson.load, str)
--- -- print(ok, codbg.str(obj))
+str = "\"Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. \z
+Notice: I'll be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll\z
+be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+ the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating the\z
+ be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+ be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+ be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+ be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+ be updating the information in the next weeks. It'll be broken occasionally. Notice: I'll be updating\z
+  information in the next weeks. It'll be broken occasionally.\""
+ok, obj = pcall(cojson.load, str)
+print(ok, codbg.str(obj))
 
 
--- str = [[
--- 	{
--- 		"a": {
--- 			"b": {
--- 				"c": {
--- 				}
--- 			}
--- 		}
--- 	}
--- ]]
--- ok, obj = pcall(cojson.load, str, 2)
--- print(ok, codbg.str(obj))
+str = [[
+	{
+		"a": {
+			"b": {
+				"c": {
+				}
+			}
+		}
+	}
+]]
+ok, obj = pcall(cojson.load, str, 2)
+print(ok, codbg.str(obj))
 
--- local function loadfromefile()
--- 	print("load test.json")
--- 	cojson.loadf("./test.json")
--- end
--- loadfromefile()
+local function loadfromefile()
+	print("load test.json")
+	cojson.loadf("./test.json")
+end
+loadfromefile()
 
 local function benchmark()
 	local stopwatch = codbg.stopwatch()
@@ -132,11 +133,29 @@ local function benchmark()
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
-	dotest("./canada.json", cjson.decode, "cjson", 20)
-	dotest("./canada.json", cojson.load, "cojson", 20)
-	dotest("./test_word.json", cjson.decode, "cjson", 30)
-	dotest("./test_word.json", cojson.load, "cojson", 30)
-	dotest("./twitter.json", cjson.decode, "cjson", 60)
-	dotest("./twitter.json", cojson.load, "cojson", 60)
+	dotest("./test_float.json", cojson.load, "cojson", 30)
+	dotest("./test_int.json", cojson.load, "cojson", 30)
+	dotest("./test_string.json", cojson.load, "cojson", 90)
+	dotest("./test_string2.json", cojson.load, "cojson", 50)
+	dotest("./test_string3.json", cojson.load, "cojson", 50)
+	dotest("./test_word.json", cojson.load, "cojson", 200)
+
+	dotest("./test_float.json", cjson.decode, "cjson", 30)
+	dotest("./test_int.json", cjson.decode, "cjson", 30)
+	dotest("./test_string.json", cjson.decode, "cjson", 90)
+	dotest("./test_string2.json", cjson.decode, "cjson", 50)
+	dotest("./test_string3.json", cjson.decode, "cjson", 50)
+	dotest("./test_word.json", cjson.decode, "cjson", 200)
+
+	-- dotest("./canada.json", cjson.decode, "cjson", 20)
+	-- dotest("./canada.json", cojson.load, "cojson", 20)
+	-- dotest("./test_word.json", cjson.decode, "cjson", 300)
+	-- dotest("./test_word.json", cojson.load, "cojson", 300)
+	-- dotest("./twitter.json", cjson.decode, "cjson", 60)
+	-- dotest("./twitter.json", cojson.load, "cojson", 60)
+	-- dotest("./citm_catalog.json", cjson.decode, "cjson", 30)
+	-- dotest("./citm_catalog.json", cojson.load, "cojson", 30)
+	-- dotest("./player.json", cjson.decode, "cjson", 200)
+	-- dotest("./player.json", cojson.load, "cojson", 200)
 end
 benchmark()
