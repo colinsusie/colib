@@ -182,17 +182,14 @@ static inline void _membuffer_grow(membuffer_t *buff, size_t needsz) {
 
 // 压入一个字符
 static inline void membuffer_putc(membuffer_t *buff, int c) {
-	if (likely(buff->sz < buff->cap))
-		buff->b[buff->sz++] = (char)c;
-	else {
+	if (unlikely(buff->sz +1 > buff->cap))
 		_membuffer_grow(buff, buff->sz+1);
-		buff->b[buff->sz++] = (char)c;
-	}
+	buff->b[buff->sz++] = (char)c;
 }
 
 // 写入一段内存
 static inline void membuffer_putb(membuffer_t *buff, const void *b, size_t sz) {
-	if (buff->sz + sz > buff->cap)
+	if (unlikely(buff->sz + sz > buff->cap))
 		_membuffer_grow(buff, buff->sz+sz);
 	memcpy(buff->b + buff->sz, b, sz);
 	buff->sz += sz;

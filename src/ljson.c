@@ -145,7 +145,7 @@ static void parser_throw_error(json_parser_t *parser, const char *fmt, ...) {
 #define peek_and_next(p) (*(p)->ptr++)
 #define peek(p) (*(p)->ptr)
 #define next(p) ((p)->ptr++)
-#define savechar(p, c) membuffer_putc(&(p)->buff, c)
+#define savechar(p, c) membuffer_putc(&(p)->buff, (c))
 #define currpos(p) (unsigned long)((p)->ptr - (p)->str)
 
 // 取解析到的错误内容
@@ -279,17 +279,21 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 	uint32_t cp = 0;
 	char ch;
 	int i, hex;
-	// hex[4]
 	for (i = 0; i < 4; ++i) {
 		ch = peek_and_next(p);
-		if (!isxdigit(ch)) {
-			parser_throw_error(p, "Invalid utf8 escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		if ('0' <= ch && ch <= '9')
+			hex = ch - '0';
+		else {
+			ch |= 0x20;
+			if ('a' <= ch && ch <= 'f')
+				hex = 10 + ch - 'a';
+			else {
+				parser_throw_error(p, "Invalid utf8 escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+				return;
+			}
 		}
-		hex = isdigit(ch) ? ch - '0' : ((ch | 0x20) - 'a') + 10;
 		cp |= hex << (12 - (i << 2));
-		// hex[i] = (isdigit(ch) ? ch - '0' : ((ch | 0x20) - 'a') + 10);
 	}
-	// cp = (hex[0] << 12) | (hex[1] << 8) | (hex[2] << 4) | hex[3];
 
 	char buff[UTF8BUFFSZ];
 	int n = coutf8_encode(buff, cp);

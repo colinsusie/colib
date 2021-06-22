@@ -33,31 +33,3 @@ const char* coutf8_decode(const char* s, utfint* val, int strict) {
 		*val = res;
 	return s + 1; /* +1 to include first byte */
 }
-
-int coutf8_len(const char* s) {
-	int count = 0;
-	const char *p = s;
-	while (*p) {
-		p = coutf8_decode(p, NULL, 1);
-		if (!p) break;
-		++count;
-	}
-	return count;
-}
-
-int coutf8_encode(char *buff, unsigned long x) {
-	int n = 1;  /* number of bytes put in buffer (backwards) */
-	assert(x <= 0x7FFFFFFFu);
-	if (x < 0x80)  /* ascii? */
-		buff[UTF8BUFFSZ - 1] = (char)x;
-	else {  /* need continuation bytes */
-		unsigned int mfb = 0x3f;  /* maximum that fits in first byte */
-		do {  /* add continuation bytes */
-			buff[UTF8BUFFSZ - (n++)] = (char)(0x80 | (x & 0x3f));
-			x >>= 6;  /* remove added bits */
-			mfb >>= 1;  /* now there is one less bit available in first byte */
-		} while (x > mfb);  /* still needs continuation byte? */
-		buff[UTF8BUFFSZ - n] = (char)((~mfb << 1) | x);  /* add first byte */
-	}
-	return n;
-}
