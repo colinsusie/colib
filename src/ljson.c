@@ -644,7 +644,6 @@ static int dumpper_check_array(json_dumpper_t *d, lua_State *L, int *len) {
 				}
 			}
 		}
-		
 		lua_pop(L, 2);
 		return 0;	// object
 	}
@@ -776,6 +775,7 @@ static int l_dump(lua_State *L) {
 	int empty_as_array = lua_toboolean(L, 2);
 	int num_as_str = lua_toboolean(L, 3);
 	uint16_t maxdepth = (uint16_t)luaL_optinteger(L, 4, DEF_MAX_DEPTH);
+	lua_settop(L, 1);
 	dumpper_do_dump(L, empty_as_array, num_as_str, maxdepth);
 	return 1;
 }

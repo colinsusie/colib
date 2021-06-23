@@ -530,9 +530,11 @@ local cojson = {}
 ---@return any 返回lua对象，如果有错误，会直接抛出异常
 function cojson.load(str, maxdepth) end
 
----从文件加载json文本，只支持utf8格式，文件可以带BOM头
----@param fname string json文件路径
+---将lua对象转换为json文本
+---@param obj any Lua对象
+---@param empty_as_array boolean 是否将空表当成数组
+---@param num_as_str boolean 是否将数字key转成字符串key
 ---@param maxdepth number 最大的层级，默认为128层
----@return any 返回lua对象，如果有错误，会直接抛出异常
-function cojson.loadf(fname, maxdepth) end
+---@return string 返l回json文本
+function cojson.dump(obj, empty_as_array, num_as_str, maxdepth) end
 

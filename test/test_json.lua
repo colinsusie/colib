@@ -120,7 +120,7 @@ print(ok, codbg.str(obj))
 
 -- do return end
 
-local function benchmark()
+local function load_benchmark()
 	local stopwatch = codbg.stopwatch()
 
 	local function doload(file, func, loadmod, count)
@@ -133,30 +133,85 @@ local function benchmark()
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
-	-- doload("./test_float.json", cojson.load, "cojson", 30)
-	-- doload("./test_float.json", cjson.decode, "cjson", 30)
+	 doload("./test_float.json", cojson.load, "cojson", 30)
+	 doload("./test_float.json", cjson.decode, "cjson", 30)
 	
-	-- doload("./test_int.json", cojson.load, "cojson", 30)
-	-- doload("./test_int.json", cjson.decode, "cjson", 30)
+	 doload("./test_int.json", cojson.load, "cojson", 30)
+	 doload("./test_int.json", cjson.decode, "cjson", 30)
 
-	-- doload("./test_string.json", cojson.load, "cojson", 90)
-	-- doload("./test_string.json", cjson.decode, "cjson", 90)
+	 doload("./test_string.json", cojson.load, "cojson", 90)
+	 doload("./test_string.json", cjson.decode, "cjson", 90)
 
-	-- doload("./test_string2.json", cojson.load, "cojson", 50)
-	-- doload("./test_string2.json", cjson.decode, "cjson", 50)
+	 doload("./test_string2.json", cojson.load, "cojson", 50)
+	 doload("./test_string2.json", cjson.decode, "cjson", 50)
 
-	-- doload("./test_word.json", cojson.load, "cojson", 200)
-	-- doload("./test_word.json", cjson.decode, "cjson", 200)
+	 doload("./test_word.json", cojson.load, "cojson", 200)
+	 doload("./test_word.json", cjson.decode, "cjson", 200)
 
-	-- doload("./twitter.json", cojson.load, "cojson", 60)
-	-- doload("./twitter.json", cjson.decode, "cjson", 60)
+	 doload("./twitter.json", cojson.load, "cojson", 60)
+	 doload("./twitter.json", cjson.decode, "cjson", 60)
 
-	-- doload("./citm_catalog.json", cojson.load, "cojson", 30)
-	-- doload("./citm_catalog.json", cjson.decode, "cjson", 30)
+	 doload("./citm_catalog.json", cojson.load, "cojson", 30)
+	 doload("./citm_catalog.json", cjson.decode, "cjson", 30)
 	
-	-- doload("./player.json", cojson.load, "cojson", 200)
-	-- doload("./player.json", cjson.decode, "cjson", 200)
+	 doload("./player.json", cojson.load, "cojson", 200)
+	 doload("./player.json", cjson.decode, "cjson", 200)
+end
+--load_benchmark()
 
+
+------------------------------------------------------------------------------
+obj = {
+	 name = "tom",
+	 age = 30,
+	 male = true,
+	 key = cojson.null,
+	 list = {20, 30, 40},
+	 array = {30, nil, 40, 50, 60},
+	 array2 = {30, nil, 40, 50, 60},
+	 str = "hello world",
+	 float = 11.432323,
+	 float2 = 0,
+	 float3 = 1231.22342E-5,
+	 float4 = 0.0,
+	 float5 = 9223372036854775807,
+	 float6 =   -9223372036854775807,
+	 float7 = 92233720368547758423,
+	 float8 = 1e+307,
+	 float9 = -23424,
+	 float10 = -111.222e+4,
+	 float11 = -1.222e-5,
+	 float12 = 1.2e+5,
+	 str = "未来\"是美好的",
+	str = "\x10"
+}
+str = cojson.dump(obj)
+print(str)
+
+obj = {}
+str = cojson.dump(obj, true)
+print(str)
+
+obj = {[20] = "hi"}
+str = cojson.dump(obj, true, true)
+print(str)
+
+obj = {[20] = "hi"}
+ok, str = pcall(cojson.dump, obj)
+print(ok, str)
+
+obj = {
+	a = {
+		b = {
+			c = 30
+		}
+	}
+}
+ok, str = pcall(cojson.dump, obj, false, false, 3)
+print(ok, str)
+
+local function dump_benchmark()
+	local stopwatch = codbg.stopwatch()
 	local function dodump(file, load, dump, mod, count)
 		local f = io.open(file, 'rb')
 		local jsontext = f:read('a')
@@ -169,34 +224,29 @@ local function benchmark()
 		stopwatch:stop()
 		print(string.format("%s: %s, seconds: %s", mod, file, stopwatch:elapsed()))
 	end
-	dodump("./twitter.json", cjson.decode, cjson.encode, "cjson", 200)
-	dodump("./twitter.json", cojson.load, cojson.dump, "cojson", 200)
+
+	dodump("./test_float.json", cojson.load, cojson.dump, "cojson", 30)
+	dodump("./test_float.json", cjson.decode, cjson.encode, "cjson", 30)
+
+	dodump("./test_int.json", cojson.load, cojson.dump, "cojson", 30)
+	dodump("./test_int.json", cjson.decode, cjson.encode, "cjson", 30)
+
+	dodump("./test_string.json", cojson.load, cojson.dump, "cojson", 90)
+	dodump("./test_string.json", cjson.decode, cjson.encode, "cjson", 90)
+
+	dodump("./test_string2.json", cojson.load, cojson.dump, "cojson", 50)
+	dodump("./test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
+
+	dodump("./test_word.json", cojson.load, cojson.dump, "cojson", 200)
+	dodump("./test_word.json", cjson.decode, cjson.encode, "cjson", 200)
+
+	dodump("./twitter.json", cojson.load, cojson.dump, "cojson", 60)
+	dodump("./twitter.json", cjson.decode, cjson.encode, "cjson", 60)
+
+	dodump("./citm_catalog.json", cojson.load, cojson.dump, "cojson", 30)
+	dodump("./citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
+
+	dodump("./player.json", cojson.load, cojson.dump, "cojson", 200)
+	dodump("./player.json", cjson.decode, cjson.encode, "cjson", 200)
 end
-benchmark()
-
-
-------------------------------------------------------------------------------
-obj = {
-	-- name = "tom",
-	-- age = 30,
-	-- male = true,
-	-- key = cojson.null,
-	-- list = {20, 30, 40},
-	-- str = "hello world",
-	-- float = 11.432323,
-	-- float2 = 0,
-	-- float3 = 1231.22342E-5,
-	-- float4 = 0.0,
-	-- float5 = 9223372036854775807,
-	-- float6 =   -9223372036854775807,
-	-- float7 = 92233720368547758423,
-	-- float8 = 1e+307,
-	-- float9 = -23424,
-	-- float10 = -111.222e+4,
-	-- float11 = -1.222e-5,
-	-- float12 = 1.2e+5,
-	-- str = "未来\"是美好的",
-	str = "\x10"
-}
-str = cojson.dump(obj)
-print(str)
+dump_benchmark()
