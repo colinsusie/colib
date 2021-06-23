@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
@@ -12,6 +13,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <float.h>
+#include <math.h>
 #include "lua.h"
 #include "lauxlib.h"
 #include "coconf.h"
@@ -24,7 +26,7 @@
 // 与Lua相关的代码
 
 static inline void l_add_object(lua_State *L) {
-	lua_checkstack(L, 5);
+	luaL_checkstack(L, 6, NULL);
 	lua_newtable(L);
 }
 static inline void l_begin_pair(lua_State *L, const char *k, size_t sz) {
@@ -34,7 +36,7 @@ static inline void l_end_pair(lua_State *L) {
 	lua_rawset(L, -3);
 }
 static inline void l_add_array(lua_State *L) {
-	lua_checkstack(L, 10);
+	luaL_checkstack(L, 6, NULL);
 	lua_newtable(L);
 }
 static inline void l_add_index(lua_State *L, int i) {
@@ -115,8 +117,7 @@ typedef struct {
 	//>>>jmp_buf jb;			// 用于实现从解析中出错直接跳出
 } json_parser_t;
 
-static inline void parser_init(json_parser_t *parser, const char *str, void *ud, 
-	uint16_t maxdepth) {
+static inline void parser_init(json_parser_t *parser, const char *str, void *ud,  uint16_t maxdepth) {
 	membuffer_init(&parser->buff);
 	parser->str = str;
 	parser->ptr = str;
@@ -146,11 +147,11 @@ static void parser_throw_error(json_parser_t *parser, const char *fmt, ...) {
 #define peek(p) (*(p)->ptr)
 #define next(p) ((p)->ptr++)
 #define savechar(p, c) membuffer_putc(&(p)->buff, (c))
-#define currpos(p) (unsigned long)((p)->ptr - (p)->str)
+#define currpos(p) (size_t)((p)->ptr - (p)->str)
 
 // 取解析到的错误内容
 static const char* parser_error_content(json_parser_t *p) {
-	int n = currpos(p);
+	size_t n = currpos(p);
 	if (n > 50) n = 50;	// 调整这个数获得更长的内容
 	membuffer_reset(&p->buff);
 	membuffer_putb(&p->buff, p->ptr - n, n);
@@ -531,17 +532,236 @@ static void parser_do_parse(const char *str, void *ud, uint16_t maxdepth) {
 }
 
 //-----------------------------------------------------------------------------
-// dumper
+// dumpper
+
+typedef struct {
+	membuffer_t buff;	// 临时缓存
+	uint16_t maxdepth;	// 最大层次
+	int empty_as_array; // 空表是否当成数组
+	int num_as_str;		// 数字Key转为字符串
+	char errmsg[ERRMSG_SIZE];	// 保存错误消息 
+} json_dumpper_t;
+
+// 足够转换数字的缓存大小
+#define NUMBER_BUFF_SZ 44
+
+static void dumpper_init(json_dumpper_t *dumpper, int empty_as_array, int num_as_str, uint16_t maxdepth) {
+	membuffer_init(&dumpper->buff);
+	dumpper->empty_as_array = empty_as_array;
+	dumpper->num_as_str = num_as_str;
+	dumpper->maxdepth = maxdepth;
+}
+
+static void dumpper_free(json_dumpper_t *dumpper) {
+	membuffer_free(&dumpper->buff);
+}
+
+// 抛出错误
+static void dumpper_throw_error(json_dumpper_t *d, lua_State *L, const char *fmt, ...) {
+	membuffer_free(&d->buff);
+	va_list arg;
+	va_start(arg, fmt);
+	vsnprintf(d->errmsg, ERRMSG_SIZE, fmt, arg);
+	va_end(arg);
+	luaL_error(L, d->errmsg);
+}
+
+static void dumpper_dump_integer(json_dumpper_t *d, lua_State *L, int idx) {
+	lua_Integer in = lua_tointeger(L, idx);
+	membuffer_ensure_space(&d->buff, NUMBER_BUFF_SZ);
+	char *p = membuffer_getp(&d->buff);
+	int len = sprintf(p, LUA_INTEGER_FMT, in);
+	membuffer_add_size(&d->buff, len);
+}
+
+static void dumpper_dump_number(json_dumpper_t *d, lua_State *L, int idx) {
+	lua_Number num = lua_tonumber(L, idx);
+	 if (isinf(num) || isnan(num))
+		 dumpper_throw_error(d, L, "The number is NaN or Infinity");
+	membuffer_ensure_space(&d->buff, NUMBER_BUFF_SZ);
+	char *p = membuffer_getp(&d->buff);
+	int len = sprintf(p, LUA_NUMBER_FMT, num);
+	membuffer_add_size(&d->buff, len);
+}
+
+// 字符转义表
+static const char *char2escape[256] = {
+	"\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006", "\\u0007",
+	"\\b", "\\t", "\\n", "\\u000b", "\\f", "\\r", "\\u000e", "\\u000f",
+	"\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+	"\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d", "\\u001e", "\\u001f",
+	NULL, NULL, "\\\"", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\\\", NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\u007f",
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+};
+
+static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
+	membuffer_t *buff = &d->buff;
+	size_t len, i;
+	const char *str = lua_tolstring(L, idx, &len);
+	membuffer_ensure_space(buff, len * 6 + 2);
+	membuffer_putc_unsafe(buff, '\"');
+	const char *esc;
+	char *sptr;
+	char *eptr;
+	for (i = 0; i < len; ++i) {
+		esc = char2escape[(unsigned char)str[i]];
+		if (likely(!esc)) 
+			membuffer_putc_unsafe(buff, str[i]);
+		else {
+			eptr = sptr = membuffer_getp(buff);
+			while (*esc) *eptr++ = *esc++;
+			membuffer_add_size(buff, eptr - sptr);
+		}
+	}
+	membuffer_putc_unsafe(buff, '\"');
+}
+
+static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth);
+
+static int dumpper_check_array(json_dumpper_t *d, lua_State *L, int *len) {
+	int asize = lua_rawlen(L, -1);
+	// 目前的策略是遍历表，如果发现有非整数Key，或key不在asize范围之内，即认为不是数组
+	lua_pushnil(L);		// table nil
+	while (lua_next(L, -2) != 0) {	// table key value
+		if (lua_type(L,-2) == LUA_TNUMBER) {
+			if (lua_isinteger(L, -2)) {
+				lua_Integer x = lua_tointeger(L, -2);
+				if (x > 0 && x <= asize) {
+					lua_pop(L,1);
+					continue;	// ok
+				}
+			}
+		}
+		
+		lua_pop(L, 2);
+		return 0;	// object
+	}
+	*len = asize;
+	return asize > 0 || d->empty_as_array;
+}
+
+static void dumpper_dump_array(json_dumpper_t *d, lua_State *L, int len, int depth) {
+	membuffer_t *buff = &d->buff;
+	membuffer_putc(buff, '[');
+	int i;
+	for (i = 1; i <= len; ++i) {
+		lua_rawgeti(L, -1, i);
+		dumpper_dump_value(d, L, depth);
+		lua_pop(L, 1);
+		if (i < len)
+			membuffer_putc(buff, ',');
+	}
+	membuffer_putc(buff, ']');
+}
+
+static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int len, int depth) {
+	membuffer_t *buff = &d->buff;
+	membuffer_putc(buff, '{');
+	int ktp;
+	int comma = 0;
+	lua_pushnil(L);		// t nil
+	while (lua_next(L, -2) != 0) {	// t k v
+		if (comma) membuffer_putc(buff, ',');
+		else comma = 1;
+		// key
+		ktp = lua_type(L, -2);
+		if (ktp == LUA_TSTRING) {
+			dumpper_dump_string(d, L, -2);
+			membuffer_putc(buff, ':');
+		} else if (ktp == LUA_TNUMBER && d->num_as_str) {
+			membuffer_putc(buff, '\"');
+			if (lua_isinteger(L, -2))
+				dumpper_dump_integer(d, L, -2);
+			else
+				dumpper_dump_number(d, L, -2);
+			membuffer_putb(buff, "\":", 2);
+		} else {
+			dumpper_throw_error(d, L, "Table key must be a string");
+		}
+		// value
+		dumpper_dump_value(d, L, depth);
+		lua_pop(L, 1);
+	}
+	membuffer_putc(buff, '}');
+}
+
+static inline void dumpper_dump_table(json_dumpper_t *d, lua_State *L, int depth) {
+	depth++;
+	if (depth >= d->maxdepth)
+		dumpper_throw_error(d, L, "Too many nested data, max depth is %d", d->maxdepth);
+	luaL_checkstack(L, 6, NULL);
+
+	int len;
+	if (dumpper_check_array(d, L, &len))
+		dumpper_dump_array(d, L, len, depth);
+	else
+		dumpper_dump_object(d, L, depth, depth);
+}
+
+static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth) {
+	int tp = lua_type(L, -1);
+	switch (tp) {
+		case LUA_TSTRING:
+			dumpper_dump_string(d, L, -1);
+			break;
+		case LUA_TNUMBER:
+			if (lua_isinteger(L, -1))
+				dumpper_dump_integer(d, L, -1);
+			else
+				dumpper_dump_number(d, L, -1);
+			break;
+		case LUA_TBOOLEAN:
+			if (lua_toboolean(L, -1))
+				membuffer_putb(&d->buff, "true", 4);
+			else
+				membuffer_putb(&d->buff, "false", 5);
+			break;
+		case LUA_TTABLE:
+			dumpper_dump_table(d, L, depth);
+			break;
+		case LUA_TNIL:
+			membuffer_putb(&d->buff, "null", 4);
+			break;
+		case LUA_TLIGHTUSERDATA:
+			if (lua_touserdata(L, -1) == NULL) {
+				membuffer_putb(&d->buff, "null", 4);
+				break;
+			}
+			goto error;
+		default:
+		error:
+			dumpper_throw_error(d, L, "Unsupport type %s", lua_typename(L, tp));
+	}
+}
+
+static void dumpper_do_dump(lua_State *L, int empty_as_array, int num_as_str, uint16_t maxdepth) {
+	json_dumpper_t dumpper;
+	dumpper_init(&dumpper, empty_as_array, num_as_str, maxdepth);
+	dumpper_dump_value(&dumpper, L, 0);
+	lua_pushlstring(L, dumpper.buff.b, dumpper.buff.sz);
+	dumpper_free(&dumpper);
+}
+
 
 
 
 //-----------------------------------------------------------------------------
 // 接口
-
 #define DEF_MAX_DEPTH 128
-#define DEF_FILE_BUFFSZ 4096
 
-// 从字符串加载：json.load(str) -> obj
+// 从字符串加载：json.load(str, maxdepth) -> obj
 // 要求字符串必须以0结尾
 static int l_load(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
@@ -552,7 +772,12 @@ static int l_load(lua_State *L) {
 
 // 保存到字符串: json.dump(obj) -> str
 static int l_dump(lua_State *L) {
-	return 0;
+	luaL_checkany(L, 1);
+	int empty_as_array = lua_toboolean(L, 2);
+	int num_as_str = lua_toboolean(L, 3);
+	uint16_t maxdepth = (uint16_t)luaL_optinteger(L, 4, DEF_MAX_DEPTH);
+	dumpper_do_dump(L, empty_as_array, num_as_str, maxdepth);
+	return 1;
 }
 
 static const luaL_Reg lib[] = {

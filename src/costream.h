@@ -151,8 +151,12 @@ static inline void membuffer_init(membuffer_t *buff) {
 	buff->sz = 0;
 }
 
-static inline void membuffer_remove(membuffer_t *buff, size_t sz) {
+static inline void membuffer_remove_size(membuffer_t *buff, size_t sz) {
 	buff->sz -= sz;
+}
+
+static inline void membuffer_add_size(membuffer_t *buff, size_t sz) {
+	buff->sz += sz;
 }
 
 static inline void membuffer_reset(membuffer_t *buff) {
@@ -161,47 +165,61 @@ static inline void membuffer_reset(membuffer_t *buff) {
 
 static inline void membuffer_free(membuffer_t *buff) {
 	if (buff->b && buff->b != buff->s) {
-		// printf(">>>>>>>>membuffer_free\n");
 		co_free(buff->b);
 		buff->b = NULL;
 	}
 }
 
 static inline void _membuffer_grow(membuffer_t *buff, size_t needsz) {
-	size_t newcap = buff->cap * 2;
-	if (newcap < needsz)
-		newcap = needsz;
-	if (buff->b == buff->s) {
-		buff->b = (char*)co_malloc(newcap);
-		memcpy(buff->b, buff->s, buff->sz);
-	} else {
-		buff->b = (char*)co_realloc(buff->b, newcap);
+	if (buff->cap < needsz) {
+		size_t newcap = buff->cap * 2;
+		if (newcap < needsz)
+			newcap = needsz;
+		if (buff->b == buff->s) {
+			buff->b = (char*)co_malloc(newcap);
+			memcpy(buff->b, buff->s, buff->sz);
+		} else {
+			buff->b = (char*)co_realloc(buff->b, newcap);
+		}
+		buff->cap = newcap;
 	}
-	buff->cap = newcap;
+}
+
+// 确保缓存中还有sz的可用空间
+static inline void membuffer_ensure_space(membuffer_t *buff, size_t sz) {
+	if (buff->sz + sz > buff->cap) {
+		_membuffer_grow(buff, buff->sz+sz);
+	}
 }
 
 // 压入一个字符
-static inline void membuffer_putc(membuffer_t *buff, int c) {
-	if (unlikely(buff->sz +1 > buff->cap))
-		_membuffer_grow(buff, buff->sz+1);
-	buff->b[buff->sz++] = (char)c;
+static inline void membuffer_putc(membuffer_t *buff, char c) {
+	membuffer_ensure_space(buff, 1);
+	buff->b[buff->sz++] = c;
 }
 
 // 写入一段内存
 static inline void membuffer_putb(membuffer_t *buff, const void *b, size_t sz) {
-	if (unlikely(buff->sz + sz > buff->cap))
-		_membuffer_grow(buff, buff->sz+sz);
+	membuffer_ensure_space(buff, sz);
 	memcpy(buff->b + buff->sz, b, sz);
 	buff->sz += sz;
 }
 
-// 从缓存准备一段内存给外面使用
-static inline void* membuffer_prepb(membuffer_t *buff, size_t sz) {
-	if (buff->sz + sz > buff->cap)
-		_membuffer_grow(buff, buff->sz+sz);
-	void *p = buff->b + sz;
-	buff->sz += sz;
-	return p;
+// 压入一个字符：不检查空间(不安全版本)
+static inline void membuffer_putc_unsafe(membuffer_t *buff, char c) {
+	buff->b[buff->sz++] = c;
 }
+
+// 写入一段内存：不检查空间(不安全版本)
+static inline void membuffer_putb_unsafe(membuffer_t *buff, const void *b, size_t sz) {
+	memcpy(buff->b + buff->sz, b, sz);
+	buff->sz += sz;
+}
+
+// 取当前的指针
+static inline char* membuffer_getp(membuffer_t *buff) {
+	return buff->b + buff->sz;
+}
+
 
 #endif
