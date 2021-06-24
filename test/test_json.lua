@@ -197,8 +197,7 @@ obj = {
 	float10 = -111.222e+4,
 	float11 = -1.222e-5,
 	float12 = 1.2e+5,
-	str = "未来\"是美好的",
-	str = "\x10",
+	str = "未来\"是美\t\f\b\\\r\n好的",
 	dict = {
 		{
 			name = "xxxx",

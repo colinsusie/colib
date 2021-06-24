@@ -179,16 +179,16 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 		neg = 1;
 		ch = peek_and_next(p);
 	}
-	if (unlikely(ch == '0')) {	// 0开头的后面只能是：.eE或结束
+	if (ch == '0') {	// 0开头的后面只能是：.eE或结束
 		ch = peek(p);
-	} else if (likely(ch >= '1' && ch <= '9')) {
+	} else if (ch >= '1' && ch <= '9') {
 		in = ch - '0';
 		ch = peek(p);
 		int d;
-		while (likely(isdigit(ch))) {
+		while (isdigit(ch)) {
 			next(p);
 			d = ch - '0';
-			if (unlikely(in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg))) {	// 更大的数字就用浮点数表示
+			if (in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg)) {	// 更大的数字就用浮点数表示
 				isdb = 1;
 				db = (double)in;
 				break;
@@ -215,7 +215,7 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 		}
 		next(p);
 		ch = peek(p);
-		if (unlikely(!isdigit(ch)))
+		if (!isdigit(ch))
 			invalid_number(p);  // .后面一定是数字
 		do {
 			next(p);
@@ -242,7 +242,7 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 			next(p);
 			ch = peek(p);
 		}
-		if (unlikely(!isdigit(ch)))
+		if (!isdigit(ch))
 			invalid_number(p);  // 后面一定是数字
 		int exp = 0;
 		do {
@@ -306,10 +306,10 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
 	char ch = peek_and_next(p);
-	while (likely(ch != '"')) {
-		if (unlikely(ch == '\0' || ch == '\n' || ch == '\r')) {
+	while (ch != '"') {
+		if (ch == '\0' || ch == '\n' || ch == '\r') {
 			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		} else if (unlikely(ch == '\\')) {
+		} else if (ch == '\\') {
 			ch = peek_and_next(p);
 			switch (ch) {
 				case 'b': 
@@ -597,6 +597,18 @@ static const char *char2escape[128] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\u007f",
 };
+static unsigned char escapesize[128] = {
+	6, 6, 6, 6, 6, 6, 6, 6,
+	2, 2, 2, 6, 2, 2, 6, 6,
+	6, 6, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, 6, 6, 6, 6, 6,
+	0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
+};
 
 static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
 	membuffer_t *buff = &d->buff;
@@ -605,19 +617,15 @@ static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
 	membuffer_ensure_space(buff, len * 6 + 2);
 	membuffer_putc_unsafe(buff, '\"');
 	const char *esc;
-	char *sptr;
-	char *eptr;
 	unsigned char ch;
 	for (i = 0; i < len; ++i) {
 		ch = (unsigned char)str[i];
 		if (ch < 128) {
 			esc = char2escape[ch];
-			if (likely(!esc)) 
+			if (!esc) 
 				membuffer_putc_unsafe(buff, (char)ch);
 			else {
-				eptr = sptr = membuffer_getp(buff);
-				while (*esc) *eptr++ = *esc++;
-				membuffer_add_size(buff, eptr - sptr);
+				membuffer_putb_unsafe(buff, esc, escapesize[ch]);
 			}
 		} else {
 			membuffer_putc_unsafe(buff, (char)ch);
@@ -698,7 +706,7 @@ static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int depth) {
 		if (ktp == LUA_TSTRING) {
 			if (d->format) dumpper_dump_indent(d, depth);
 			dumpper_dump_string(d, L, -2);
-			if (likely(!d->format))
+			if (!d->format)
 				membuffer_putc(buff, ':');
 			else
 				membuffer_putb(buff, " : ", 3);
@@ -709,7 +717,7 @@ static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int depth) {
 				dumpper_dump_integer(d, L, -2);
 			else
 				dumpper_dump_number(d, L, -2);
-			if (likely(!d->format))
+			if (!d->format)
 				membuffer_putb(buff, "\":", 2);
 			else
 				membuffer_putb(buff, "\" : ", 4);
