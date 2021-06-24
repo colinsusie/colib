@@ -165,7 +165,7 @@ static const char* parser_error_content(json_parser_t *p) {
 #define invalid_number(p) parser_throw_error(p, "Invalid number, at: %s[:%lu]", parser_error_content(p), currpos(p))
 #define MAXBY10		(int64_t)(INT64_MAX / 10)
 #define MAXLASTD	(int)(INT64_MAX % 10)
-static double powersOf10[] = {10., 100., 1.0e4,  1.0e8,   1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
+static double powersOf10[] = {10., 100., 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
 static void parser_parse_number(json_parser_t *p, char ch) {
 	int64_t in = 0;			// 整型值
 	double db = 0.0;		// 浮点数
@@ -816,7 +816,7 @@ static const luaL_Reg lib[] = {
 LUAMOD_API int luaopen_colibc_json(lua_State *L) {
 	luaL_newlib(L, lib);
 	// json.null
-    lua_pushlightuserdata(L, NULL);
-    lua_setfield(L, -2, "null");
+	lua_pushlightuserdata(L, NULL);
+	lua_setfield(L, -2, "null");
 	return 1;
 }
