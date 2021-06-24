@@ -585,7 +585,7 @@ static void dumpper_dump_number(json_dumpper_t *d, lua_State *L, int idx) {
 }
 
 // 字符转义表
-static const char *char2escape[256] = {
+static const char *char2escape[128] = {
 	"\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006", "\\u0007",
 	"\\b", "\\t", "\\n", "\\u000b", "\\f", "\\r", "\\u000e", "\\u000f",
 	"\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
@@ -596,14 +596,6 @@ static const char *char2escape[256] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\\\", NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\u007f",
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
 static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
@@ -615,14 +607,20 @@ static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
 	const char *esc;
 	char *sptr;
 	char *eptr;
+	unsigned char ch;
 	for (i = 0; i < len; ++i) {
-		esc = char2escape[(unsigned char)str[i]];
-		if (likely(!esc)) 
-			membuffer_putc_unsafe(buff, str[i]);
-		else {
-			eptr = sptr = membuffer_getp(buff);
-			while (*esc) *eptr++ = *esc++;
-			membuffer_add_size(buff, eptr - sptr);
+		ch = (unsigned char)str[i];
+		if (ch < 128) {
+			esc = char2escape[ch];
+			if (likely(!esc)) 
+				membuffer_putc_unsafe(buff, (char)ch);
+			else {
+				eptr = sptr = membuffer_getp(buff);
+				while (*esc) *eptr++ = *esc++;
+				membuffer_add_size(buff, eptr - sptr);
+			}
+		} else {
+			membuffer_putc_unsafe(buff, (char)ch);
 		}
 	}
 	membuffer_putc_unsafe(buff, '\"');
@@ -632,23 +630,25 @@ static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth);
 
 static int dumpper_check_array(json_dumpper_t *d, lua_State *L, int *len) {
 	int asize = lua_rawlen(L, -1);
-	// 目前的策略是遍历表，如果发现有非整数Key，或key不在asize范围之内，即认为不是数组
-	lua_pushnil(L);		// table nil
-	while (lua_next(L, -2) != 0) {	// table key value
-		if (lua_type(L,-2) == LUA_TNUMBER) {
-			if (lua_isinteger(L, -2)) {
-				lua_Integer x = lua_tointeger(L, -2);
-				if (x > 0 && x <= asize) {
-					lua_pop(L,1);
-					continue;	// ok
-				}
-			}
+	if (asize > 0) {
+		lua_pushinteger(L, asize);
+		if (lua_next(L, -2) == 0) {
+			*len = asize;
+			return 1;
+		} else {
+			lua_pop(L, 2);
+			return 0;
 		}
-		lua_pop(L, 2);
-		return 0;	// object
+	} else {
+		lua_pushnil(L);
+		if (lua_next(L, -2) == 0) {
+			*len = asize;
+			return d->empty_as_array;
+		} else {
+			lua_pop(L, 2);
+			return 0;
+		}
 	}
-	*len = asize;
-	return asize > 0 || d->empty_as_array;
 }
 
 static inline void dumpper_dump_indent(json_dumpper_t *d, int count) {
