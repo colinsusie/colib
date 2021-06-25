@@ -346,10 +346,9 @@ static void parser_parse_string(json_parser_t *p) {
 
 // 取下一个token
 static void parser_next_token(json_parser_t *p) {
-	char ch;
+	char ch = peek_and_next(p);
 start:
 	// 删除空白字符
-	ch = peek_and_next(p);
 	while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
 		ch = peek_and_next(p);
 
@@ -416,7 +415,10 @@ start:
 			return;
 		case '/':
 			if (p->allowcomment && peek_and_next(p) == '/') {
-				while (peek_and_next(p) != '\n') ;
+				ch = peek_and_next(p);
+				while (ch != '\n' && ch != '\r' && ch != '\0') {
+					ch = peek_and_next(p);
+				}
 				goto start;
 			}
 			// fall through to default
