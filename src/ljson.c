@@ -303,40 +303,70 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 	membuffer_putb(&p->buff, buff + (UTF8BUFFSZ - n), n);
 }
 
+static const unsigned char escape2char[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 0
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	// 16
+	0, 0, '\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '/', 	// 32
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	// 48
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	// 64
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '\\', 0, 0, 0, 	// 80
+	0, 0, 'b', 0, 0, 0, 'f', 0, 0, 0, 0, 0, 0, 0, 'n', 0, // 96
+	0, 0, 'r', 0, 't', 'u', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 112
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
-	char ch = peek_and_next(p);
+	unsigned char ch = (unsigned char)peek_and_next(p);
 	while (ch != '"') {
-		if (ch == '\0' || ch == '\n' || ch == '\r') {
-			parser_throw_error(p, "Unfinished string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		} else if (ch == '\\') {
-			ch = peek_and_next(p);
-			switch (ch) {
-				case 'b': 
-					savechar(p, '\b'); break;
-				case 'f': 
-					savechar(p, '\f'); break;
-				case 'n': 
-					savechar(p, '\n'); break;
-				case 'r': 
-					savechar(p, '\r'); break;
-				case 't': 
-					savechar(p, '\t'); break;
-				case '/': 
-					savechar(p, '/'); break;
-				case '\\': 
-					savechar(p, '\\'); break;
-				case '"': 
-					savechar(p, '"'); break;
-				case 'u': 
-					parser_parse_utf8esc(p); break;
-				default:
-					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
-			}
-			ch = peek_and_next(p);
-		} else {
+		if (unlikely(iscntrl(ch))) {
+			parser_throw_error(p, "Invalid string, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			return;
+		}
+		if (ch != '\\') {
 			savechar(p, ch);
 			ch = peek_and_next(p);
+		} else {
+			ch = peek_and_next(p);
+			ch = escape2char[ch];
+			if (ch == 'u') {
+				parser_parse_utf8esc(p);
+			} else if (!ch) {
+				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			} else {
+				savechar(p, ch);
+			}
+			ch = peek_and_next(p);
+			// switch (ch) {
+			// 	case 'b': 
+			// 		savechar(p, '\b'); break;
+			// 	case 'f': 
+			// 		savechar(p, '\f'); break;
+			// 	case 'n': 
+			// 		savechar(p, '\n'); break;
+			// 	case 'r': 
+			// 		savechar(p, '\r'); break;
+			// 	case 't': 
+			// 		savechar(p, '\t'); break;
+			// 	case '/': 
+			// 		savechar(p, '/'); break;
+			// 	case '\\': 
+			// 		savechar(p, '\\'); break;
+			// 	case '"': 
+			// 		savechar(p, '"'); break;
+			// 	case 'u': 
+			// 		parser_parse_utf8esc(p); break;
+			// 	default:
+			// 		parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			// }
+			// ch = peek_and_next(p);
 		}	
 	}
 	p->tk.type = TK_STRING;
