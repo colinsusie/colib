@@ -599,18 +599,6 @@ static const char *char2escape[128] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\u007f",
 };
-static unsigned char escapesize[128] = {
-	6, 6, 6, 6, 6, 6, 6, 6,
-	2, 2, 2, 6, 2, 2, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
-};
 
 static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
 	membuffer_t *buff = &d->buff;
@@ -627,7 +615,10 @@ static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
 			if (!esc) 
 				membuffer_putc_unsafe(buff, (char)ch);
 			else {
-				membuffer_putb_unsafe(buff, esc, escapesize[ch]);
+				while (*esc != '\0') {
+					membuffer_putc_unsafe(buff, *esc);
+					++esc;
+				}
 			}
 		} else {
 			membuffer_putc_unsafe(buff, (char)ch);
