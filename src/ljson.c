@@ -307,14 +307,9 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 static void parser_parse_string(json_parser_t *p) {
 	unsigned char ch = (unsigned char)peek_and_next(p);
 	while (ch != '"') {
-		if (unlikely(iscntrl(ch))) {
+		if (ch < 32) {
 			parser_throw_error(p, "Invalid string, at: %s[:%lu]", parser_error_content(p), currpos(p));
-			return;
-		}
-		if (ch != '\\') {
-			savechar(p, ch);
-			ch = peek_and_next(p);
-		} else {
+		} else if (ch == '\\') {
 			ch = peek_and_next(p);
 			switch (ch) {
 				case 'b': 
@@ -338,6 +333,9 @@ static void parser_parse_string(json_parser_t *p) {
 				default:
 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
+			ch = peek_and_next(p);
+		} else {
+			savechar(p, ch);
 			ch = peek_and_next(p);
 		}	
 	}
