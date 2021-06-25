@@ -148,7 +148,7 @@ static void parser_throw_error(json_parser_t *parser, const char *fmt, ...) {
 #define peek_and_next(p) (*(p)->ptr++)
 #define peek(p) (*(p)->ptr)
 #define next(p) ((p)->ptr++)
-#define savechar(p, c) membuffer_putc(&(p)->buff, (char)(c))
+#define savechar(p, c) membuffer_putc(&(p)->buff, c)
 #define currpos(p) (size_t)((p)->ptr - (p)->str)
 
 // 取解析到的错误内容
@@ -305,9 +305,9 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
-	unsigned char ch = (unsigned char)peek_and_next(p);
+	char ch = peek_and_next(p);
 	while (ch != '"') {
-		if (ch < 32) {
+		if (ch == '\0' || ch == '\n' || ch == '\r') {
 			parser_throw_error(p, "Invalid string, at: %s[:%lu]", parser_error_content(p), currpos(p));
 		} else if (ch == '\\') {
 			ch = peek_and_next(p);
