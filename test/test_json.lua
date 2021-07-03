@@ -7,7 +7,7 @@ end
 package.path = package.path ..";../colib/?.lua"
 
 local cojson = require "json"
--- local cjson = require "cjson"
+local cjson = require "cjson"
 local codbg = require "dbg"
 local ok, obj, str
 
@@ -38,17 +38,18 @@ str = [[{
 obj = cojson.load(str)
 print(codbg.str(obj))
 
-str = [[
-	// this is tom
-	{
-		// this is tom
-		"name": "tom",		// this is tom
-		// comment ok
-		"age": 100
-	}
-]]
-obj = cojson.load(str, 100, true)
-print(codbg.str(obj))
+
+-- str = [[
+-- 	// this is tom
+-- 	{
+-- 		// this is tom
+-- 		"name": "tom",		// this is tom
+-- 		// comment ok
+-- 		"age": 100
+-- 	}
+-- ]]
+-- obj = cojson.load(str, 100, true)
+-- print(codbg.str(obj))
 
 -- 错误格式
 
@@ -117,7 +118,6 @@ be updating the information in the next weeks. It'll be broken occasionally. Not
 ok, obj = pcall(cojson.load, str)
 print(ok, codbg.str(obj))
 
-
 str = [[
 	{
 		"a": {
@@ -130,8 +130,6 @@ str = [[
 ]]
 ok, obj = pcall(cojson.load, str, 2)
 print(ok, codbg.str(obj))
-
--- do return end
 
 local function load_benchmark()
 	local stopwatch = codbg.stopwatch()
@@ -147,30 +145,32 @@ local function load_benchmark()
 		print(string.format("%s: %s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 	end
 	 doload("./test_float.json", cojson.load, "cojson", 30)
-	--  doload("./test_float.json", cjson.decode, "cjson", 30)
+	 doload("./test_float.json", cjson.decode, "cjson", 30)
 	
 	 doload("./test_int.json", cojson.load, "cojson", 30)
-	--  doload("./test_int.json", cjson.decode, "cjson", 30)
+	 doload("./test_int.json", cjson.decode, "cjson", 30)
 
 	 doload("./test_string.json", cojson.load, "cojson", 90)
-	--  doload("./test_string.json", cjson.decode, "cjson", 90)
+	 doload("./test_string.json", cjson.decode, "cjson", 90)
 
 	 doload("./test_string2.json", cojson.load, "cojson", 50)
-	--  doload("./test_string2.json", cjson.decode, "cjson", 50)
+	 doload("./test_string2.json", cjson.decode, "cjson", 50)
 
 	 doload("./test_word.json", cojson.load, "cojson", 200)
-	--  doload("./test_word.json", cjson.decode, "cjson", 200)
+	 doload("./test_word.json", cjson.decode, "cjson", 200)
 
 	 doload("./twitter.json", cojson.load, "cojson", 60)
-	--  doload("./twitter.json", cjson.decode, "cjson", 60)
+	 doload("./twitter.json", cjson.decode, "cjson", 60)
 
 	 doload("./citm_catalog.json", cojson.load, "cojson", 30)
-	--  doload("./citm_catalog.json", cjson.decode, "cjson", 30)
+	 doload("./citm_catalog.json", cjson.decode, "cjson", 30)
 	
 	 doload("./player.json", cojson.load, "cojson", 200)
-	--  doload("./player.json", cjson.decode, "cjson", 200)
+	 doload("./player.json", cjson.decode, "cjson", 200)
 end
 load_benchmark()
+
+do return end
 
 end
 ------------------------------------------------------------------------------

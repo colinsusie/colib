@@ -206,17 +206,15 @@ static inline void membuffer_putb(membuffer_t *buff, const void *b, size_t sz) {
 }
 
 // 压入一个字符：不检查空间(不安全版本)
-#define membuffer_putc_unsafe(buff, ch) ((buff)->b[(buff)->sz++] = (ch))
-// static inline void membuffer_putc_unsafe(membuffer_t *buff, char c) {
-// 	buff->b[buff->sz++] = c;
-// }
+static inline void membuffer_putc_unsafe(membuffer_t *buff, char c) {
+	buff->b[buff->sz++] = c;
+}
 
 // 写入一段内存：不检查空间(不安全版本)
-#define membuffer_putb_unsafe(buff, ptr, size) (memcpy((buff)->b + (buff)->sz, (ptr), (size)), (buff)->sz += (size))
-// static inline void membuffer_putb_unsafe(membuffer_t *buff, const void *b, size_t sz) {
-// 	memcpy(buff->b + buff->sz, b, sz);
-// 	buff->sz += sz;
-// }
+static inline void membuffer_putb_unsafe(membuffer_t *buff, const void *b, size_t sz) {
+	memcpy(buff->b + buff->sz, b, sz);
+	buff->sz += sz;
+}
 
 // 取当前的指针
 static inline char* membuffer_getp(membuffer_t *buff) {

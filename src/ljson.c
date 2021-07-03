@@ -118,8 +118,10 @@ typedef struct {
 	//>>>jmp_buf jb;			// 用于实现从解析中出错直接跳出
 } json_parser_t;
 
-static inline void parser_init(json_parser_t *parser, const char *str, void *ud,  int maxdepth, int allowcomment) {
+static inline void parser_init(json_parser_t *parser, const char *str, size_t size, void *ud,  
+	int maxdepth, int allowcomment) {
 	membuffer_init(&parser->buff);
+	membuffer_ensure_space(&parser->buff, size);
 	parser->str = str;
 	parser->ptr = str;
 	parser->ud = ud;
@@ -145,10 +147,11 @@ static void parser_throw_error(json_parser_t *parser, const char *fmt, ...) {
 }
 
 // 辅助宏
-#define peek_and_next(p) (*(p)->ptr++)
-#define peek(p) (*(p)->ptr)
-#define next(p) ((p)->ptr++)
-#define savechar(p, c) membuffer_putc(&(p)->buff, c)
+#define getchar(p) (*(p)->ptr)
+#define skipchar(p) (++(p)->ptr)
+#define get_and_next(p) (*(p)->ptr++)
+#define next_and_get(p) (*(++(p)->ptr))
+#define savechar(p, c) membuffer_putc_unsafe(&(p)->buff, (c))
 #define currpos(p) (size_t)((p)->ptr - (p)->str)
 
 // 取解析到的错误内容
@@ -162,7 +165,7 @@ static const char* parser_error_content(json_parser_t *p) {
 }
 
 // 解析数字
-#define invalid_number(p) parser_throw_error(p, "Invalid number, at: %s[:%lu]", parser_error_content(p), currpos(p))
+#define invalid_number(p) parser_throw_error(p, "Invalid value, at: %s[:%lu]", parser_error_content(p), currpos(p))
 #define MAXBY10		(int64_t)(INT64_MAX / 10)
 #define MAXLASTD	(int)(INT64_MAX % 10)
 static double powersOf10[] = {10., 100., 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
@@ -177,16 +180,16 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 
 	if (ch == '-') {	// 负值
 		neg = 1;
-		ch = peek_and_next(p);
+		ch = get_and_next(p);
 	}
 	if (ch == '0') {	// 0开头的后面只能是：.eE或结束
-		ch = peek(p);
+		ch = getchar(p);
 	} else if (ch >= '1' && ch <= '9') {
 		in = ch - '0';
-		ch = peek(p);
+		ch = getchar(p);
 		int d;
 		while (isdigit(ch)) {
-			next(p);
+			skipchar(p);
 			d = ch - '0';
 			if (in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg)) {	// 更大的数字就用浮点数表示
 				isdb = 1;
@@ -194,7 +197,7 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 				break;
 			}
 			in = in * 10 + d;
-			ch = peek(p);
+			ch = getchar(p);
 		}
 	} else {
 		invalid_number(p);		// 只能是0~9开头
@@ -202,9 +205,9 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 
 	if (isdb) {	// 用浮点数表示大数
 		while (isdigit(ch)) {
-			next(p);
+			skipchar(p);
 			in = in * 10 + (ch - '0');
-			ch = peek(p);
+			ch = getchar(p);
 		}
 	}
 
@@ -213,15 +216,15 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 			isdb = 1;
 			db = (double)in;
 		}
-		next(p);
-		ch = peek(p);
+		skipchar(p);
+		ch = getchar(p);
 		if (!isdigit(ch))
 			invalid_number(p);  // .后面一定是数字
 		do {
-			next(p);
+			skipchar(p);
 			db = db * 10. + (ch - '0');
 			decimals++;
-			ch = peek(p);
+			ch = getchar(p);
 		} while (isdigit(ch));
 		exponent -= decimals;
 	}
@@ -231,24 +234,24 @@ static void parser_parse_number(json_parser_t *p, char ch) {
 			isdb = 1;
 			db = (double)in;
 		}
-		next(p);
-		ch = peek(p);
+		skipchar(p);
+		ch = getchar(p);
 		eneg = 0;
 		if (ch == '-') {
 			eneg = 1;
-			next(p);
-			ch = peek(p);
+			skipchar(p);
+			ch = getchar(p);
 		} else if (ch == '+') {
-			next(p);
-			ch = peek(p);
+			skipchar(p);
+			ch = getchar(p);
 		}
 		if (!isdigit(ch))
 			invalid_number(p);  // 后面一定是数字
 		int exp = 0;
 		do {
-			next(p);
+			skipchar(p);
 			exp = exp * 10. + (ch - '0');
-			ch = peek(p);
+			ch = getchar(p);
 		} while (isdigit(ch));
 		if (eneg) exponent -= exp;
 		else exponent += exp;
@@ -283,7 +286,7 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 	char ch;
 	int i, hex;
 	for (i = 0; i < 4; ++i) {
-		ch = peek_and_next(p);
+		ch = get_and_next(p);
 		if ('0' <= ch && ch <= '9')
 			hex = ch - '0';
 		else {
@@ -305,12 +308,12 @@ static void parser_parse_utf8esc(json_parser_t *p) {
 
 // 解析字符串
 static void parser_parse_string(json_parser_t *p) {
-	char ch = peek_and_next(p);
+	char ch = get_and_next(p);
 	while (ch != '"') {
 		if (ch == '\0' || ch == '\n' || ch == '\r') {
 			parser_throw_error(p, "Invalid string, at: %s[:%lu]", parser_error_content(p), currpos(p));
 		} else if (ch == '\\') {
-			ch = peek_and_next(p);
+			ch = get_and_next(p);
 			switch (ch) {
 				case 'b': 
 					savechar(p, '\b'); break;
@@ -333,10 +336,10 @@ static void parser_parse_string(json_parser_t *p) {
 				default:
 					parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			}
-			ch = peek_and_next(p);
+			ch = get_and_next(p);
 		} else {
 			savechar(p, ch);
-			ch = peek_and_next(p);
+			ch = get_and_next(p);
 		}	
 	}
 	p->tk.type = TK_STRING;
@@ -346,11 +349,11 @@ static void parser_parse_string(json_parser_t *p) {
 
 // 取下一个token
 static void parser_next_token(json_parser_t *p) {
-	char ch = peek_and_next(p);
+	char ch = get_and_next(p);
 start:
 	// 删除空白字符
 	while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
-		ch = peek_and_next(p);
+		ch = get_and_next(p);
 
 	membuffer_reset(&p->buff);
 	switch (ch) {
@@ -375,10 +378,10 @@ start:
 			parser_parse_number(p, ch);
 			return;
 		case 'f':
-			if (peek_and_next(p) == 'a') 
-			if (peek_and_next(p) == 'l')
-			if (peek_and_next(p) == 's')
-			if (peek_and_next(p) == 'e') {
+			if (get_and_next(p) == 'a') 
+			if (get_and_next(p) == 'l')
+			if (get_and_next(p) == 's')
+			if (get_and_next(p) == 'e') {
 				p->tk.type = TK_BOOLEAN;
 				p->tk.value.b = 0;
 				return;
@@ -386,9 +389,9 @@ start:
 			parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			return;
 		case 't':
-			if (peek_and_next(p) == 'r') 
-			if (peek_and_next(p) == 'u')
-			if (peek_and_next(p) == 'e') {
+			if (get_and_next(p) == 'r') 
+			if (get_and_next(p) == 'u')
+			if (get_and_next(p) == 'e') {
 				p->tk.type = TK_BOOLEAN;
 				p->tk.value.b = 1;
 				return;
@@ -396,9 +399,9 @@ start:
 			parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
 			return;
 		case 'n':
-			if (peek_and_next(p) == 'u') 
-			if (peek_and_next(p) == 'l')
-			if (peek_and_next(p) == 'l') {
+			if (get_and_next(p) == 'u') 
+			if (get_and_next(p) == 'l')
+			if (get_and_next(p) == 'l') {
 				p->tk.type = TK_NULL;
 				return;
 			}
@@ -414,10 +417,10 @@ start:
 			p->tk.type = TK_END;
 			return;
 		case '/':
-			if (p->allowcomment && peek_and_next(p) == '/') {
-				ch = peek_and_next(p);
+			if (p->allowcomment && get_and_next(p) == '/') {
+				ch = get_and_next(p);
 				while (ch != '\n' && ch != '\r' && ch != '\0') {
-					ch = peek_and_next(p);
+					ch = get_and_next(p);
 				}
 				goto start;
 			}
@@ -527,19 +530,336 @@ static void parser_parse_value(json_parser_t *p) {
 	}
 }
 
-// 解析json文本
-static void parser_do_parse(const char *str, void *ud, int maxdepth, int allowcomment) {
-	json_parser_t parser;
-	parser_init(&parser, str, ud, maxdepth, allowcomment);
-	//>>>if (setjmp(parser.jb) == 0) {
-		parser_next_token(&parser);
-		parser_parse_value(&parser);
-		parser_next_token(&parser);
-		if (parser.tk.type != TK_END) {
-			parser_throw_error(&parser, "Expect '<eof>' but got '%s', at: %s[:%lu]", token_tname[parser.tk.type], 
-				parser_error_content(&parser), currpos(&parser));
+//-------------------------------------------------------------------------------------------------------------
+// 新的实现
+
+static inline void parser_skip_whitespaces(json_parser_t *p) {
+	char ch = getchar(p);
+	while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+		ch = next_and_get(p);
+}
+
+static inline void parser_expect_char(json_parser_t *p, char c) {
+	if (likely(getchar(p) == c))
+		skipchar(p);
+	else
+		parser_throw_error(p, "Expect '%c' but got '%c' at: %s[:%lu]", c,  getchar(p), 
+			parser_error_content(p), currpos(p));
+}
+
+static inline void parser_process_false(json_parser_t *p) {
+	if (likely(get_and_next(p) == 'a' && get_and_next(p) == 'l' &&  get_and_next(p) == 's' && 
+		get_and_next(p) == 'e')) {
+		ON_ADD_BOOLEAN(p->ud, 0);
+	} else
+		parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
+}
+
+static inline void parser_process_true(json_parser_t *p) {
+	if (likely(get_and_next(p) == 'r' && get_and_next(p) == 'u' &&  get_and_next(p) == 'e')) {
+		ON_ADD_BOOLEAN(p->ud, 1);
+	} else
+		parser_throw_error(p, "Invalid boolean, at: %s[:%lu]", parser_error_content(p), currpos(p));
+}
+
+static inline void parser_process_null(json_parser_t *p) {
+	if (likely(get_and_next(p) == 'u' && get_and_next(p) == 'l' &&  get_and_next(p) == 'l')) {
+		ON_ADD_NULL(p->ud);
+	} else
+		parser_throw_error(p, "Invalid null, at: %s[:%lu]", parser_error_content(p), currpos(p));
+}
+
+static const char escape2char[256] = {
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 0~19
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0, '\"',0,  0,  0,  0,  0,  // 20~39
+	0,  0,  0,  0,  0,  0,  0, '/', 0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 40~59
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 60~79
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0, '\\',0,  0,  0,  0,  0, '\b',0,  // 80~99
+	0,  0, '\f',0,  0,  0,  0,  0,  0,  0,  '\n',0,  0,  0, '\r',0, '\t',0,  0,  0,  // 100~119
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 120~139
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 140~159
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 160~179
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 180~199
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 200~219
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 220~239
+	0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,                  // 240~256
+};
+
+static inline void parser_process_utf8esc(json_parser_t *p) {
+	uint32_t cp = 0;
+	char ch;
+	int i, hex;
+	for (i = 0; i < 4; ++i) {
+		ch = get_and_next(p);
+		if ('0' <= ch && ch <= '9')
+			hex = ch - '0';
+		else {
+			ch |= 0x20;
+			if ('a' <= ch && ch <= 'f')
+				hex = 10 + ch - 'a';
+			else {
+				parser_throw_error(p, "Invalid utf8 escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+				return;
+			}
 		}
-		parser_free(&parser);
+		cp |= hex << (12 - (i << 2));
+	}
+	char buff[UTF8BUFFSZ];
+	int n = coutf8_encode(buff, cp);
+	membuffer_putb_unsafe(&p->buff, buff + (UTF8BUFFSZ - n), n);
+}
+
+static inline void parser_process_string(json_parser_t *p, int iskey) {
+	membuffer_reset(&p->buff);
+	char ch = get_and_next(p);
+	for (;;) {
+		if (ch == '\\') {
+			unsigned char nch = (unsigned char)get_and_next(p);
+			if (escape2char[nch]) {
+				savechar(p, escape2char[nch]);
+				ch = get_and_next(p);
+			} else if (nch == 'u') {
+				parser_process_utf8esc(p);
+				ch = get_and_next(p);
+			} else {
+				parser_throw_error(p, "Invalid escape sequence, at: %s[:%lu]", parser_error_content(p), currpos(p));
+			}
+		} else if (ch == '"') { 
+			break;
+		} else if ((unsigned char)ch < 32) {
+			parser_throw_error(p, "Invalid string, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		} else {
+			savechar(p, ch);
+			ch = get_and_next(p);
+		}
+	}
+	if (iskey)
+		ON_BEGIN_PAIR(p->ud, p->buff.b, p->buff.sz);
+	else
+		ON_ADD_STRING(p->ud, p->buff.b, p->buff.sz);
+}
+
+static inline void parser_process_number(json_parser_t *p, char ch) {
+	int64_t in = 0;			// 整型值
+	double db = 0.0;		// 浮点数
+	int isdouble = 0;			// 是否是浮点数
+	int neg = 0;			// 是否是负数
+	int eneg = 0;			// 指数部分是否负数
+	int decimals = 0;		// 小数位数
+	int exponent = 0;		// 指数位数
+
+	membuffer_reset(&p->buff);
+	if (ch == '-') {	// 负值
+		neg = 1;
+		ch = get_and_next(p);
+	}
+	if (ch == '0') {	// 0开头的后面只能是：.eE或结束
+		ch = getchar(p);
+	} else if (ch >= '1' && ch <= '9') {
+		in = ch - '0';
+		ch = getchar(p);
+		int d;
+		while (isdigit(ch)) {
+			skipchar(p);
+			d = ch - '0';
+			if (in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg)) {	// 更大的数字就用浮点数表示
+				isdouble = 1;
+				db = (double)in;
+				break;
+			}
+			in = in * 10 + d;
+			ch = getchar(p);
+		}
+	} else {
+		invalid_number(p);		// 只能是0~9开头
+	}
+
+	if (isdouble) {	// 用浮点数表示大数
+		while (isdigit(ch)) {
+			skipchar(p);
+			in = in * 10 + (ch - '0');
+			ch = getchar(p);
+		}
+	}
+
+	if (ch == '.') {	// 小数点部分
+		if (!isdouble) {
+			isdouble = 1;
+			db = (double)in;
+		}
+		skipchar(p);
+		ch = getchar(p);
+		if (!isdigit(ch))
+			invalid_number(p);  // .后面一定是数字
+		do {
+			skipchar(p);
+			db = db * 10. + (ch - '0');
+			decimals++;
+			ch = getchar(p);
+		} while (isdigit(ch));
+		exponent -= decimals;
+	}
+
+	if (ch == 'e' || ch == 'E') {	// 指数部分
+		if (!isdouble) {		// 有e强制认为是浮点数
+			isdouble = 1;
+			db = (double)in;
+		}
+		skipchar(p);
+		ch = getchar(p);
+		eneg = 0;
+		if (ch == '-') {
+			eneg = 1;
+			skipchar(p);
+			ch = getchar(p);
+		} else if (ch == '+') {
+			skipchar(p);
+			ch = getchar(p);
+		}
+		if (!isdigit(ch))
+			invalid_number(p);  // 后面一定是数字
+		int exp = 0;
+		do {
+			skipchar(p);
+			exp = exp * 10. + (ch - '0');
+			ch = getchar(p);
+		} while (isdigit(ch));
+		if (eneg) exponent -= exp;
+		else exponent += exp;
+	}
+
+	if (isdouble) {
+		if (exponent < DBL_MIN_10_EXP || exponent > DBL_MAX_10_EXP)	// 判断是否溢出
+			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
+		// 计算结果
+		int n = exponent;
+		if (n < 0) n = -n;
+		double p10 = 1.0;
+		double *d;
+		for (d = powersOf10; n != 0; n >>= 1, d += 1) {
+			if (n & 1) p10 *= *d;
+		}
+		if (exponent < 0)
+			db /= p10;
+		else
+			db *= p10;
+		if (neg) db = -db;
+		ON_ADD_FLOAT(p->ud, db);
+	} else {
+		if (neg) in = -in;
+		ON_ADD_INTEGER(p->ud, neg);
+	}
+}
+static inline void parser_process_value(json_parser_t *p);
+
+static inline void parser_process_object(json_parser_t *p) {
+	parser_add_depth(p);
+	ON_ADD_OBJECT(p->ud);
+	parser_skip_whitespaces(p);
+	char ch = getchar(p);
+	if (ch == '}') {
+		skipchar(p);
+		p->curdepth--;
+		return;
+	}
+	while (1) {
+		parser_expect_char(p, '"');
+		parser_process_string(p, 1);		// key
+
+		parser_skip_whitespaces(p);
+		parser_expect_char(p, ':');
+
+		parser_process_value(p);			// value
+		ON_END_PAIR(p->ud);
+
+		parser_skip_whitespaces(p);
+		if (getchar(p) == '}') {
+			skipchar(p);
+			p->curdepth--;
+			return;
+		}
+		else {
+			parser_expect_char(p, ',');
+			parser_skip_whitespaces(p);
+		}
+	}
+}
+
+static inline void parser_process_array(json_parser_t *p) {
+	parser_add_depth(p);
+	ON_ADD_ARRAY(p->ud);
+	parser_skip_whitespaces(p);
+	char ch = getchar(p);
+	if (ch == ']') {
+		skipchar(p);
+		p->curdepth--;
+		return;
+	}
+	int i;
+	for (i = 0; ;++i) {
+		parser_process_value(p);
+		ON_ADD_INDEX(p->ud, i);
+
+		parser_skip_whitespaces(p);
+		if (getchar(p) == ']') {
+			skipchar(p);
+			p->curdepth--;
+			return;
+		}
+		else {
+			parser_expect_char(p, ',');
+		}
+	}
+}
+
+static inline void parser_process_value(json_parser_t *p) {
+	parser_skip_whitespaces(p);
+	char ch = get_and_next(p);
+	switch (ch) {
+		case 'f': 
+			parser_process_false(p);
+			break;
+		case 't':
+			parser_process_true(p);
+			break;
+		case 'n': 
+			parser_process_null(p);
+			break;
+		case '"':
+			parser_process_string(p, 0);
+			break;
+		case '{':
+			parser_process_object(p);
+			break;
+		case '[':
+			parser_process_array(p);
+			break;
+		default:
+			parser_process_number(p, ch);
+			break;
+	}
+}
+
+// 解析json文本
+static void parser_do_parse(const char *str, size_t size, void *ud, int maxdepth, int allowcomment) {
+	json_parser_t p;
+	parser_init(&p, str, size, ud, maxdepth, allowcomment);
+	//>>>if (setjmp(p.jb) == 0) {
+		// parser_next_token(&p);
+		// parser_parse_value(&p);
+		// parser_next_token(&p);
+		// if (p.tk.type != TK_END) {
+		// 	parser_throw_error(&p, "Expect '<eof>' but got '%s', at: %s[:%lu]", token_tname[p.tk.type], 
+		// 		parser_error_content(&p), currpos(&p));
+		// }
+		parser_process_value(&p);
+		
+		parser_skip_whitespaces(&p);
+		if (getchar(&p) != '\0') {
+			parser_throw_error(&p, "Expect '<eof>' but got '%c', at: %s[:%lu]", getchar(&p), 
+				parser_error_content(&p), currpos(&p));
+		}
+		parser_free(&p);
 	//>>>}
 }
 
@@ -784,10 +1104,11 @@ static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth) {
 // 从字符串加载：json.load(str, maxdepth) -> obj
 // 要求字符串必须以0结尾
 static int l_load(lua_State *L) {
-	const char *str = luaL_checkstring(L, 1);
+	size_t size;
+	const char *str = luaL_checklstring(L, 1, &size);
 	int maxdepth = (int)luaL_optinteger(L, 2, DEF_MAX_DEPTH);
 	int allowcomment = lua_toboolean(L, 3);
-	parser_do_parse(str, L, maxdepth, allowcomment);
+	parser_do_parse(str, size, L, maxdepth, allowcomment);
 	return 1;
 }
 
