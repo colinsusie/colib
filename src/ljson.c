@@ -519,7 +519,7 @@ static void dumpper_throw_error(json_dumpper_t *d, lua_State *L, const char *fmt
 	luaL_error(L, d->errmsg);
 }
 
-static void dumpper_dump_integer(json_dumpper_t *d, lua_State *L, int idx) {
+static void dumpper_process_integer(json_dumpper_t *d, lua_State *L, int idx) {
 	lua_Integer in = lua_tointeger(L, idx);
 	membuffer_ensure_space(&d->buff, NUMBER_BUFF_SZ);
 	char *p = membuffer_getp(&d->buff);
@@ -527,7 +527,7 @@ static void dumpper_dump_integer(json_dumpper_t *d, lua_State *L, int idx) {
 	membuffer_add_size(&d->buff, len);
 }
 
-static void dumpper_dump_number(json_dumpper_t *d, lua_State *L, int idx) {
+static void dumpper_process_number(json_dumpper_t *d, lua_State *L, int idx) {
 	lua_Number num = lua_tonumber(L, idx);
 	 if (isinf(num) || isnan(num))
 		 dumpper_throw_error(d, L, "The number is NaN or Infinity");
@@ -538,47 +538,51 @@ static void dumpper_dump_number(json_dumpper_t *d, lua_State *L, int idx) {
 }
 
 // 字符转义表
-static const char *char2escape[128] = {
-	"\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006", "\\u0007",
-	"\\b", "\\t", "\\n", "\\u000b", "\\f", "\\r", "\\u000e", "\\u000f",
-	"\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
-	"\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d", "\\u001e", "\\u001f",
-	NULL, NULL, "\\\"", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\\\", NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "\\u007f",
+static const char char2escape[256] = {
+	'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'b', 't',  'n', 'u', 'f', 'r', 'u', 'u', 'u', 'u', 'u', 'u', // 0~19
+	'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u',  'u', 'u',  0,   0,  '"',   0,   0,   0,   0,   0, // 20~39
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 40~59
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 60~79
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,  '\\', 0,   0,   0,   0,   0,   0,   0,  // 80~99
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 100~119
+	 0,   0,   0,   0,   0,   0,   0,  'u',  0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 120~139
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 140~159
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 160~179
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 180~199
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 200~219
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  // 220~239
+	 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,                      // 240~256
 };
+static const char hex_digits[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-static void dumpper_dump_string(json_dumpper_t *d, lua_State *L, int idx) {
+static void dumpper_process_string(json_dumpper_t *d, lua_State *L, int idx) {
 	membuffer_t *buff = &d->buff;
 	size_t len, i;
 	const char *str = lua_tolstring(L, idx, &len);
 	membuffer_ensure_space(buff, len * 6 + 2);
 	membuffer_putc_unsafe(buff, '\"');
-	const char *esc;
+	char esc;
 	unsigned char ch;
 	for (i = 0; i < len; ++i) {
 		ch = (unsigned char)str[i];
-		if (ch < 128) {
-			esc = char2escape[ch];
-			if (!esc) 
-				membuffer_putc_unsafe(buff, (char)ch);
-			else {
-				while (*esc != '\0') {
-					membuffer_putc_unsafe(buff, *esc);
-					++esc;
-				}
-			}
-		} else {
+		esc = char2escape[ch];
+		if (likely(!esc)) 
 			membuffer_putc_unsafe(buff, (char)ch);
+		else {
+			membuffer_putc_unsafe(buff, '\\');
+			membuffer_putc_unsafe(buff, esc);
+			if (esc == 'u') {
+				membuffer_putc_unsafe(buff, '0');
+				membuffer_putc_unsafe(buff, '0');
+				membuffer_putc_unsafe(buff, hex_digits[(unsigned char)esc >> 4]);
+				membuffer_putc_unsafe(buff, hex_digits[(unsigned char)esc & 0xF]);
+			}
 		}
 	}
 	membuffer_putc_unsafe(buff, '\"');
 }
 
-static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth);
+static void dumpper_process_value(json_dumpper_t *d, lua_State *L, int depth);
 
 static int dumpper_check_array(json_dumpper_t *d, lua_State *L, int *len) {
 	int asize = lua_rawlen(L, -1);
@@ -603,14 +607,14 @@ static int dumpper_check_array(json_dumpper_t *d, lua_State *L, int *len) {
 	}
 }
 
-static inline void dumpper_dump_indent(json_dumpper_t *d, int count) {
+static inline void dumpper_add_indent(json_dumpper_t *d, int count) {
 	membuffer_ensure_space(&d->buff, count);
 	int i;
 	for (i = 0; i < count; ++i)
 		membuffer_putc_unsafe(&d->buff, '\t');
 }
 
-static void dumpper_dump_array(json_dumpper_t *d, lua_State *L, int len, int depth) {
+static void dumpper_process_array(json_dumpper_t *d, lua_State *L, int len, int depth) {
 	membuffer_t *buff = &d->buff;
 	membuffer_putc(buff, '[');
 
@@ -618,19 +622,19 @@ static void dumpper_dump_array(json_dumpper_t *d, lua_State *L, int len, int dep
 	for (i = 1; i <= len; ++i) {
 		if (d->format && i == 1) membuffer_putc(buff, '\n');
 		lua_rawgeti(L, -1, i);
-		if (d->format) dumpper_dump_indent(d, depth);
-		dumpper_dump_value(d, L, depth);
+		if (d->format) dumpper_add_indent(d, depth);
+		dumpper_process_value(d, L, depth);
 		lua_pop(L, 1);
 		if (i < len)
 			membuffer_putc(buff, ',');
 		if (d->format) membuffer_putc(buff, '\n');
 	}
 
-	if (d->format && i > 1)  dumpper_dump_indent(d, depth-1);
+	if (d->format && i > 1)  dumpper_add_indent(d, depth-1);
 	membuffer_putc(buff, ']');
 }
 
-static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int depth) {
+static void dumpper_process_object(json_dumpper_t *d, lua_State *L, int depth) {
 	membuffer_t *buff = &d->buff;
 	membuffer_putc(buff, '{');
 
@@ -648,19 +652,19 @@ static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int depth) {
 		// key
 		ktp = lua_type(L, -2);
 		if (ktp == LUA_TSTRING) {
-			if (d->format) dumpper_dump_indent(d, depth);
-			dumpper_dump_string(d, L, -2);
+			if (d->format) dumpper_add_indent(d, depth);
+			dumpper_process_string(d, L, -2);
 			if (!d->format)
 				membuffer_putc(buff, ':');
 			else
 				membuffer_putb(buff, " : ", 3);
 		} else if (ktp == LUA_TNUMBER && d->num_as_str) {
-			if (d->format) dumpper_dump_indent(d, depth);
+			if (d->format) dumpper_add_indent(d, depth);
 			membuffer_putc(buff, '\"');
 			if (lua_isinteger(L, -2))
-				dumpper_dump_integer(d, L, -2);
+				dumpper_process_integer(d, L, -2);
 			else
-				dumpper_dump_number(d, L, -2);
+				dumpper_process_number(d, L, -2);
 			if (!d->format)
 				membuffer_putb(buff, "\":", 2);
 			else
@@ -669,17 +673,17 @@ static void dumpper_dump_object(json_dumpper_t *d, lua_State *L, int depth) {
 			dumpper_throw_error(d, L, "Table key must be a string");
 		}
 		// value
-		dumpper_dump_value(d, L, depth);
+		dumpper_process_value(d, L, depth);
 		lua_pop(L, 1);
 	}
 	if (d->format && comma) {
 		membuffer_putc(buff, '\n');
-		dumpper_dump_indent(d, depth-1);
+		dumpper_add_indent(d, depth-1);
 	} 
 	membuffer_putc(buff, '}');
 }
 
-static inline void dumpper_dump_table(json_dumpper_t *d, lua_State *L, int depth) {
+static inline void dumpper_process_table(json_dumpper_t *d, lua_State *L, int depth) {
 	depth++;
 	if (depth > d->maxdepth)
 		dumpper_throw_error(d, L, "Too many nested data, max depth is %d", d->maxdepth);
@@ -687,22 +691,22 @@ static inline void dumpper_dump_table(json_dumpper_t *d, lua_State *L, int depth
 
 	int len;
 	if (dumpper_check_array(d, L, &len))
-		dumpper_dump_array(d, L, len, depth);
+		dumpper_process_array(d, L, len, depth);
 	else
-		dumpper_dump_object(d, L, depth);
+		dumpper_process_object(d, L, depth);
 }
 
-static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth) {
+static void dumpper_process_value(json_dumpper_t *d, lua_State *L, int depth) {
 	int tp = lua_type(L, -1);
 	switch (tp) {
 		case LUA_TSTRING:
-			dumpper_dump_string(d, L, -1);
+			dumpper_process_string(d, L, -1);
 			break;
 		case LUA_TNUMBER:
 			if (lua_isinteger(L, -1))
-				dumpper_dump_integer(d, L, -1);
+				dumpper_process_integer(d, L, -1);
 			else
-				dumpper_dump_number(d, L, -1);
+				dumpper_process_number(d, L, -1);
 			break;
 		case LUA_TBOOLEAN:
 			if (lua_toboolean(L, -1))
@@ -711,7 +715,7 @@ static void dumpper_dump_value(json_dumpper_t *d, lua_State *L, int depth) {
 				membuffer_putb(&d->buff, "false", 5);
 			break;
 		case LUA_TTABLE:
-			dumpper_dump_table(d, L, depth);
+			dumpper_process_table(d, L, depth);
 			break;
 		case LUA_TNIL:
 			membuffer_putb(&d->buff, "null", 4);
@@ -754,7 +758,7 @@ static int l_dump(lua_State *L) {
 	dumpper.maxdepth = (int)luaL_optinteger(L, 5, DEF_MAX_DEPTH);
 
 	lua_settop(L, 1);
-	dumpper_dump_value(&dumpper, L, 0);
+	dumpper_process_value(&dumpper, L, 0);
 	lua_pushlstring(L, dumpper.buff.b, dumpper.buff.sz);
 	membuffer_free(&dumpper.buff);
 	return 1;

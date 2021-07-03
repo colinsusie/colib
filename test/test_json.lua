@@ -177,7 +177,7 @@ local function load_benchmark()
 end
 load_benchmark()
 
-do return end
+-- do return end
 
 end
 ------------------------------------------------------------------------------
@@ -264,28 +264,28 @@ local function dump_benchmark()
 	end
 
 	dodump("./test_float.json", cojson.load, cojson.dump, "cojson", 30)
-	-- dodump("./test_float.json", cjson.decode, cjson.encode, "cjson", 30)
+	dodump("./test_float.json", cjson.decode, cjson.encode, "cjson", 30)
 
 	dodump("./test_int.json", cojson.load, cojson.dump, "cojson", 30)
-	-- dodump("./test_int.json", cjson.decode, cjson.encode, "cjson", 30)
+	dodump("./test_int.json", cjson.decode, cjson.encode, "cjson", 30)
 
 	dodump("./test_string.json", cojson.load, cojson.dump, "cojson", 90)
-	-- dodump("./test_string.json", cjson.decode, cjson.encode, "cjson", 90)
+	dodump("./test_string.json", cjson.decode, cjson.encode, "cjson", 90)
 
 	dodump("./test_string2.json", cojson.load, cojson.dump, "cojson", 50)
-	-- dodump("./test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
+	dodump("./test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
 
 	dodump("./test_word.json", cojson.load, cojson.dump, "cojson", 200)
-	-- dodump("./test_word.json", cjson.decode, cjson.encode, "cjson", 200)
+	dodump("./test_word.json", cjson.decode, cjson.encode, "cjson", 200)
 
 	dodump("./twitter.json", cojson.load, cojson.dump, "cojson", 60)
-	-- dodump("./twitter.json", cjson.decode, cjson.encode, "cjson", 60)
+	dodump("./twitter.json", cjson.decode, cjson.encode, "cjson", 60)
 
 	dodump("./citm_catalog.json", cojson.load, cojson.dump, "cojson", 30)
-	-- dodump("./citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
+	dodump("./citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
 
 	dodump("./player.json", cojson.load, cojson.dump, "cojson", 200)
-	-- dodump("./player.json", cjson.decode, cjson.encode, "cjson", 200)
+	dodump("./player.json", cjson.decode, cjson.encode, "cjson", 200)
 end
 dump_benchmark()
 
