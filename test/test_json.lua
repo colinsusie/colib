@@ -12,7 +12,8 @@ local codbg = require "dbg"
 local ok, obj, str
 
 if true then
--- -- 简单
+
+-- 简单
 str = [[{
 	"name": "tom",
 	"age": 30,
@@ -25,9 +26,9 @@ str = [[{
 	"float2": 0,
 	"float3": 1231.22342E-5,
 	"float4": 0.0,
-	"float5": 9223372036854775807,
-	"float6": -9223372036854775808,
-	"float7": 92233720368547758423,
+	"float5": 9223372036854775807  ,
+	"float6": -9223372036854775808  ,
+	"float7": 92233720368547758423  ,
 	"float8": 1e+307,
 	"float9": -23424,
 	"float10": -111.222e+4,
@@ -39,17 +40,23 @@ obj = cojson.load(str)
 print(codbg.str(obj))
 
 
--- str = [[
--- 	// this is tom
--- 	{
--- 		// this is tom
--- 		"name": "tom",		// this is tom
--- 		// comment ok
--- 		"age": 100
--- 	}
--- ]]
--- obj = cojson.load(str, 100, true)
--- print(codbg.str(obj))
+str = [[
+// this is tom
+//
+	//sdfsff
+	// sdfsf
+	{
+		// this is tom
+		"name": "tom",		// this is tom
+		// comment ok
+		"age": 	//wwwwwwww
+//33333
+
+		100
+	} // sdsafafasf
+]]
+obj = cojson.load(str, 100, true)
+print(codbg.str(obj))
 
 -- 错误格式
 
