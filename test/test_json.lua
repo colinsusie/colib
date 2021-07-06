@@ -137,7 +137,7 @@ if true then
 			print(string.format("%s\t%s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 		end
 		print("load============================================================")
-		-- doload("test_float.json", cojson.load, "cojson", 30)
+		doload("test_float.json", cojson.load, "cojson", 30)
 		-- doload("test_float.json", cjson.decode, "cjson", 30)
 		-- doload("test_float.json", moonjson.decode, "moonjson", 30)
 

@@ -302,70 +302,56 @@ static inline void parser_process_string(json_parser_t *p) {
 	}
 }
 
-
-static inline void parser_process_number(json_parser_t *p, char ch) {
 #define invalid_number(p) parser_throw_error(p, "Invalid value, at: %s[:%lu]", parser_error_content(p), currpos(p))
 #define MAXBY10		(int64_t)(922337203685477580)
 #define MAXLASTD	(int)(7)
 static double powersOf10[] = {10., 100., 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1.0e128, 1.0e256};
-
+static inline void parser_process_number(json_parser_t *p, char ch) {
+	double db;				// 浮点数
 	int64_t in = 0;			// 整型值
-	double db = 0.0;		// 浮点数
 	int isdouble = 0;		// 是否是浮点数
 	int neg = 0;			// 是否是负数
-	int eneg = 0;			// 指数部分是否负数
-	int decimals = 0;		// 小数位数
 	int exponent = 0;		// 指数位数
 
 	if (ch == '-') {	// 负值
 		neg = 1;
 		ch = get_and_next(p);
 	}
-	if (ch == '0') {	// 0开头的后面只能是：.eE或\0
+	if (unlikely(ch == '0')) {	// 0开头的后面只能是：.eE或\0
 		ch = peekchar(p);
-	} else if (ch >= '1' && ch <= '9') {
+	} else if (likely(ch >= '1' && ch <= '9')) {
 		in = ch - '0';
 		ch = peekchar(p);
-		int d;
 		while (ch >= '0' && ch <= '9') {
-			skipchar(p);
-			d = ch - '0';
-			if (unlikely(in >= MAXBY10 && (in > MAXBY10 || d > MAXLASTD + neg))) {	// 更大的数字就用浮点数表示
+			if (unlikely(in >= MAXBY10 && (in > MAXBY10 || (ch - '0') > MAXLASTD + neg))) {	// 更大的数字就用浮点数表示
 				isdouble = 1;
 				db = (double)in;
+				do {
+					db = db * 10.0 + (ch - '0');
+					ch = next_and_get(p);
+				} while (ch >= '0' && ch <= '9');
 				break;
 			}
-			in = in * 10 + d;
-			ch = peekchar(p);
+			in = in * 10 + (ch - '0');
+			ch = next_and_get(p);
 		}
 	} else {
-		invalid_number(p);		// 只能是0~9开头
-	}
-
-	if (isdouble) {	// 用浮点数表示大数
-		while (ch >= '0' && ch <= '9') {
-			skipchar(p);
-			in = in * 10 + (ch - '0');
-			ch = peekchar(p);
-		}
+		invalid_number(p);
 	}
 
 	if (ch == '.') {	// 小数点部分
-		if (!isdouble) {
+		if (likely(!isdouble)) {
 			isdouble = 1;
 			db = (double)in;
 		}
-		skipchar(p);
-		ch = peekchar(p);
+		ch = next_and_get(p);
 		if (unlikely(!(ch >= '0' && ch <= '9')))
 			invalid_number(p);  // .后面一定是数字
 		do {
-			skipchar(p);
 			db = db * 10. + (ch - '0');
-			decimals++;
-			ch = peekchar(p);
+			exponent--;
+			ch = next_and_get(p);
 		} while (ch >= '0' && ch <= '9');
-		exponent -= decimals;
 	}
 
 	if (ch == 'e' || ch == 'E') {	// 指数部分
@@ -373,27 +359,22 @@ static double powersOf10[] = {10., 100., 1.0e4, 1.0e8, 1.0e16, 1.0e32, 1.0e64, 1
 			isdouble = 1;
 			db = (double)in;
 		}
-		skipchar(p);
-		ch = peekchar(p);
-		eneg = 0;
+		ch = next_and_get(p);
+		int eneg = 0;
 		if (ch == '-') {
 			eneg = 1;
-			skipchar(p);
-			ch = peekchar(p);
+			ch = next_and_get(p);
 		} else if (ch == '+') {
-			skipchar(p);
-			ch = peekchar(p);
+			ch = next_and_get(p);
 		}
 		if (unlikely(!(ch >= '0' && ch <= '9')))
 			invalid_number(p);  // 后面一定是数字
 		int exp = 0;
 		do {
-			skipchar(p);
 			exp = exp * 10. + (ch - '0');
-			ch = peekchar(p);
+			ch = next_and_get(p);
 		} while (ch >= '0' && ch <= '9');
-		if (eneg) exponent -= exp;
-		else exponent += exp;
+		exponent += eneg ? (-exp) : (exp);
 	}
 
 	if (isdouble) {
