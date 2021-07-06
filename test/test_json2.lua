@@ -12,7 +12,7 @@ local moonjson = require "moonjson"
 local codbg = require "dbg"
 local ok, obj, str
 
-if false then
+if true then
 	-- 简单
 	str = [[{
 		"name": "tom",
@@ -26,18 +26,36 @@ if false then
 		"float2": 0,
 		"float3": 1231.22342E-5,
 		"float4": 0.0,
-		"float5": 9223372036854775807,
-		"float6": -9223372036854775808,
-		"float7": 92233720368547758423,
+		"float5": 9223372036854775807  ,
+		"float6": -9223372036854775808  ,
+		"float7": 92233720368547758423  ,
 		"float8": 1e+307,
 		"float9": -23424,
 		"float10": -111.222e+4,
 		"float11": -1.222e-5,
 		"float12": 1.2e+5,
-		"str": "未来\"是美好的",
-		"emoji": "\ud83c\udf09"
+		"str": "未来\"是美好的"
 	}]]
 	obj = cojson.load(str)
+	print(codbg.str(obj))
+
+
+	str = [[
+	// this is tom
+	//
+		//sdfsff
+		// sdfsf
+		{
+			// this is tom
+			"name": "tom",		// this is tom
+			// comment ok
+			"age": 	//wwwwwwww
+	//33333
+
+			100
+		} // sdsafafasf
+	]]
+	obj = cojson.load(str, 100, true)
 	print(codbg.str(obj))
 
 	-- 错误格式
@@ -122,7 +140,7 @@ if false then
 end
 
 
-if true then
+if false then
 	local function load_benchmark()
 		local stopwatch = codbg.stopwatch()
 
@@ -137,42 +155,23 @@ if true then
 			print(string.format("%s\t%s, seconds: %s", loadmod, file, stopwatch:elapsed()))
 		end
 		print("load============================================================")
-		-- doload("test_float.json", cojson.load, "cojson", 30)
-		-- doload("test_float.json", cjson.decode, "cjson", 30)
-		-- doload("test_float.json", moonjson.decode, "moonjson", 30)
+		 doload("test_float.json", cojson.load, "cojson", 30)
+		 doload("test_string.json", cojson.load, "cojson", 90)
+		 doload("test_string2.json", cojson.load, "cojson", 50)
+		 doload("twitter.json", cojson.load, "cojson", 60)
+		 doload("citm_catalog.json", cojson.load, "cojson", 30)
 
-		-- doload("test_int.json", cojson.load, "cojson", 30)
-		-- doload("test_int.json", cjson.decode, "cjson", 30)
-		-- doload("test_int.json", moonjson.decode, "moonjson", 30)
-		
+		 doload("test_float.json", cjson.decode, "cjson", 30)
+		 doload("test_string.json", cjson.decode, "cjson", 90)
+		 doload("test_string2.json", cjson.decode, "cjson", 50)
+		 doload("twitter.json", cjson.decode, "cjson", 60)
+		 doload("citm_catalog.json", cjson.decode, "cjson", 30)
 
-		-- doload("test_string.json", cojson.load, "cojson", 90)
-		-- doload("test_string.json", cjson.decode, "cjson", 90)
-		-- doload("test_string.json", moonjson.decode, "moonjson", 90)
-
-		-- doload("test_string2.json", cojson.load, "cojson", 50)
-		-- doload("test_string2.json", cjson.decode, "cjson", 50)
-		-- doload("test_string2.json", moonjson.decode, "moonjson", 50)
-
-		-- doload("twitter.json", cojson.load, "cojson", 60)
-		-- doload("twitter.json", cjson.decode, "cjson", 60)
-		-- doload("twitter.json", moonjson.decode, "moonjson", 60)
-
-		-- doload("citm_catalog.json", cojson.load, "cojson", 30)
-		-- doload("citm_catalog.json", cjson.decode, "cjson", 30)
-		-- doload("citm_catalog.json", moonjson.decode, "moonjson", 30)
-
-		-- doload("test_word.json", cojson.load, "cojson", 100)
-		-- doload("test_word.json", cjson.decode, "cjson", 100)
-		-- doload("test_word.json", moonjson.decode, "moonjson", 100)
-
-		-- doload("test_space.json", cojson.load, "cojson", 200)
-		-- doload("test_space.json", cjson.decode, "cjson", 200)
-		-- doload("test_space.json", moonjson.decode, "moonjson", 200)
-
-		-- doload("test_utf8escape.json", cojson.load, "cojson", 100)
-		-- doload("test_utf8escape.json", cjson.decode, "cjson", 100)
-		-- doload("test_utf8escape.json", moonjson.decode, "moonjson", 100)
+		 doload("test_float.json", moonjson.decode, "moonjson", 30)
+		 doload("test_string.json", moonjson.decode, "moonjson", 90)
+		 doload("test_string2.json", moonjson.decode, "moonjson", 50)
+		 doload("twitter.json", moonjson.decode, "moonjson", 60)
+		 doload("citm_catalog.json", moonjson.decode, "moonjson", 30)
 	end
 	load_benchmark()
 end
@@ -272,6 +271,12 @@ if false then
 		dodump("test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
 		dodump("twitter.json", cjson.decode, cjson.encode, "cjson", 60)
 		dodump("citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
+
+		dodump("test_float.json", moonjson.decode, moonjson.encode, "moonjson", 30)
+		dodump("test_string.json", moonjson.decode, moonjson.encode, "moonjson", 90)
+		dodump("test_string2.json", moonjson.decode, moonjson.encode, "moonjson", 50)
+		dodump("twitter.json", moonjson.decode, moonjson.encode, "moonjson", 60)
+		dodump("citm_catalog.json", moonjson.decode, moonjson.encode, "moonjson", 30)
 	end
 	dump_benchmark()
 end
