@@ -27,7 +27,7 @@
 
 static inline void l_add_object(lua_State *L) {
 	luaL_checkstack(L, 6, NULL);
-	lua_newtable(L);
+	lua_createtable(L, 0, 4);
 }
 static inline void l_begin_pair(lua_State *L, const char *k, size_t sz) {
 	lua_pushlstring(L, k, sz);
@@ -37,7 +37,7 @@ static inline void l_end_pair(lua_State *L) {
 }
 static inline void l_add_array(lua_State *L) {
 	luaL_checkstack(L, 6, NULL);
-	lua_newtable(L);
+	lua_createtable(L, 4, 0);
 }
 static inline void l_add_index(lua_State *L, int i) {
 	lua_rawseti(L, -2, i+1);
