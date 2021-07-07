@@ -1,5 +1,5 @@
 /**
- * json解析器：只支持utf-8格式
+ * json解析器：只支持utf-8格式，Lua只支持64位的数字
  */
 #define LUA_LIB
 #include <stdlib.h>
@@ -521,6 +521,7 @@ typedef struct {
 
 // 足够转换数字的缓存大小
 #define NUMBER_BUFF_SZ 44
+#define INTEGER_BUFF_SZ 24
 
 // 抛出错误
 static void dumpper_throw_error(json_dumpper_t *d, lua_State *L, const char *fmt, ...) {
@@ -533,11 +534,18 @@ static void dumpper_throw_error(json_dumpper_t *d, lua_State *L, const char *fmt
 }
 
 static void dumpper_process_integer(json_dumpper_t *d, lua_State *L, int idx) {
-	lua_Integer in = lua_tointeger(L, idx);
-	membuffer_ensure_space(&d->buff, NUMBER_BUFF_SZ);
-	char *p = membuffer_getp(&d->buff);
-	int len = sprintf(p, LUA_INTEGER_FMT, in);
-	membuffer_add_size(&d->buff, len);
+	char nbuff[INTEGER_BUFF_SZ];
+	int i = INTEGER_BUFF_SZ;
+	membuffer_ensure_space(&d->buff, INTEGER_BUFF_SZ);
+	int64_t x = (int64_t)lua_tointeger(L, idx);
+	if (x < 0) {
+		membuffer_putc_unsafe(&d->buff, '-');
+		x = -x;
+	}
+	do {
+		nbuff[--i] = (x % 10) + '0';
+	} while (x /= 10);
+	membuffer_putb_unsafe(&d->buff, nbuff+i, INTEGER_BUFF_SZ-i);
 }
 
 static void dumpper_process_number(json_dumpper_t *d, lua_State *L, int idx) {

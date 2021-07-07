@@ -122,7 +122,7 @@ if false then
 end
 
 
-if true then
+if false then
 	local function load_benchmark()
 		local stopwatch = codbg.stopwatch()
 
@@ -179,42 +179,47 @@ end
 ------------------------------------------------------------------------------
 if false then
 	obj = {
-		name = "tom",
-		age = 30,
-		male = true,
-		key = cojson.null,
-		list = {20, 30, 40},
-		array = {30, nil, 40, 50, 60},
-		array2 = {30, nil, 40, 50, 60},
-		str = "hello world",
-		float = 11.432323,
-		float2 = 0,
-		float3 = 1231.22342E-5,
-		float4 = 0.0,
-		float5 = 9223372036854775807,
-		float6 =   -9223372036854775807,
-		float7 = 92233720368547758423,
-		float8 = 1e+307,
-		float9 = -23424,
-		float10 = -111.222e+4,
-		float11 = -1.222e-5,
-		float12 = 1.2e+5,
-		str = "未来\"是美\t\f\b\\\r\n好的",
-		dict = {
-			{
-				name = "xxxx",
-				skills = {1, 2, 3, 4, "wwwww"},
-			},
-			{
-				name = "xxxx",
-				skills = {1, 2, 3, 4, "wwwww"},
-			},
-			{
-				name = "xxxx",
-				skills = {1, 2, 3, 4, "wwwww"},
-			},
-			{}, {}
-		}
+		-- name = "tom",
+		-- age = 30,
+		-- male = true,
+		-- key = cojson.null,
+		-- list = {20, 30, 40},
+		-- array = {30, nil, 40, 50, 60},
+		-- array2 = {30, nil, 40, 50, 60},
+		-- str = "hello world",
+		-- float = 11.432323,
+		-- float2 = 0,
+		-- float3 = 1231.22342E-5,
+		-- float4 = 0.0,
+		-- float5 = 9223372036854775807,
+		-- float6 =   -9223372036854775807,
+		-- float7 = 92233720368547758423,
+		-- float8 = 1e+307,
+		-- float9 = -23424,
+		-- float10 = -111.222e+4,
+		-- float11 = -1.222e-5,
+		-- float12 = 1.2e+5,
+		int = 10000,
+		int2 = -2123,
+		int3 = 0,
+		int4 = 13412412412412,
+		int5 = -9223372036854775803,
+		-- str = "未来\"是美\t\f\b\\\r\n好的",
+		-- dict = {
+		-- 	{
+		-- 		name = "xxxx",
+		-- 		skills = {1, 2, 3, 4, "wwwww"},
+		-- 	},
+		-- 	{
+		-- 		name = "xxxx",
+		-- 		skills = {1, 2, 3, 4, "wwwww"},
+		-- 	},
+		-- 	{
+		-- 		name = "xxxx",
+		-- 		skills = {1, 2, 3, 4, "wwwww"},
+		-- 	},
+		-- 	{}, {}
+		-- }
 	}
 	str = cojson.dump(obj, true)
 	print(str)
@@ -244,7 +249,7 @@ if false then
 	print(ok, str)
 end
 
-if false then
+if true then
 	local function dump_benchmark()
 		local stopwatch = codbg.stopwatch()
 		local function dodump(file, load, dump, mod, count)
@@ -265,9 +270,9 @@ if false then
 		-- dodump("test_float.json", cjson.decode, cjson.encode, "cjson", 10)
 		-- dodump("test_float.json", moonjson.decode, moonjson.encode, "moonjson", 10)
 
-		-- dodump("test_int.json", cojson.load, cojson.dump, "cojson", 30)
-		-- dodump("test_int.json", cjson.decode, cjson.encode, "cjson", 30)
-		-- dodump("test_int.json", moonjson.decode, moonjson.encode, "moonjson", 30)
+		dodump("test_int.json", cojson.load, cojson.dump, "cojson", 30)
+		dodump("test_int.json", cjson.decode, cjson.encode, "cjson", 30)
+		dodump("test_int.json", moonjson.decode, moonjson.encode, "moonjson", 30)
 		
 		-- dodump("test_string.json", cojson.load, cojson.dump, "cojson", 90)
 		-- dodump("test_string.json", cjson.decode, cjson.encode, "cjson", 90)
