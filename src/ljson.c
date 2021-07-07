@@ -633,17 +633,17 @@ static void dumpper_process_array(json_dumpper_t *d, lua_State *L, int len, int 
 
 	int i;
 	for (i = 1; i <= len; ++i) {
-		if (d->format && i == 1) membuffer_putc(buff, '\n');
+		if (unlikely(d->format && i == 1)) membuffer_putc(buff, '\n');
 		lua_rawgeti(L, -1, i);
-		if (d->format) dumpper_add_indent(d, depth);
+		if (unlikely(d->format)) dumpper_add_indent(d, depth);
 		dumpper_process_value(d, L, depth);
 		lua_pop(L, 1);
 		if (i < len)
 			membuffer_putc(buff, ',');
-		if (d->format) membuffer_putc(buff, '\n');
+		if (unlikely(d->format)) membuffer_putc(buff, '\n');
 	}
 
-	if (d->format && i > 1)  dumpper_add_indent(d, depth-1);
+	if (unlikely(d->format && i > 1))  dumpper_add_indent(d, depth-1);
 	membuffer_putc(buff, ']');
 }
 
@@ -657,28 +657,28 @@ static void dumpper_process_object(json_dumpper_t *d, lua_State *L, int depth) {
 	while (lua_next(L, -2) != 0) {	// t k v
 		if (comma) {
 			membuffer_putc(buff, ',');
-			if (d->format) membuffer_putc(buff, '\n');
+			if (unlikely(d->format)) membuffer_putc(buff, '\n');
 		} else {
 			comma = 1;
-			if (d->format) membuffer_putc(buff, '\n');
+			if (unlikely(d->format)) membuffer_putc(buff, '\n');
 		} 
 		// key
 		ktp = lua_type(L, -2);
 		if (ktp == LUA_TSTRING) {
-			if (d->format) dumpper_add_indent(d, depth);
+			if (unlikely(d->format)) dumpper_add_indent(d, depth);
 			dumpper_process_string(d, L, -2);
-			if (!d->format)
+			if (likely(!d->format))
 				membuffer_putc(buff, ':');
 			else
 				membuffer_putb(buff, " : ", 3);
 		} else if (ktp == LUA_TNUMBER && d->num_as_str) {
-			if (d->format) dumpper_add_indent(d, depth);
+			if (unlikely(d->format)) dumpper_add_indent(d, depth);
 			membuffer_putc(buff, '\"');
 			if (lua_isinteger(L, -2))
 				dumpper_process_integer(d, L, -2);
 			else
 				dumpper_process_number(d, L, -2);
-			if (!d->format)
+			if (likely(!d->format))
 				membuffer_putb(buff, "\":", 2);
 			else
 				membuffer_putb(buff, "\" : ", 4);
@@ -689,7 +689,7 @@ static void dumpper_process_object(json_dumpper_t *d, lua_State *L, int depth) {
 		dumpper_process_value(d, L, depth);
 		lua_pop(L, 1);
 	}
-	if (d->format && comma) {
+	if (unlikely(d->format && comma)) {
 		membuffer_putc(buff, '\n');
 		dumpper_add_indent(d, depth-1);
 	} 

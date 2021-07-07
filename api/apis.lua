@@ -527,9 +527,8 @@ local cojson = {}
 ---加载json文本，只支持utf8格式
 ---@param str string json文本
 ---@param maxdepth number 最大的层级，默认为128层
----@param allowcomment boolean 是否允许json中存在注释(//)
 ---@return any 返回lua对象，如果有错误，会直接抛出异常
-function cojson.load(str, maxdepth, allowcomment) end
+function cojson.load(str, maxdepth) end
 
 ---将lua对象转换为json文本
 ---@param obj any Lua对象
