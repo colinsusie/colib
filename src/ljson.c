@@ -378,11 +378,9 @@ static inline void parser_process_number(json_parser_t *p, char ch) {
 	}
 
 	if (isdouble) {
-		if (unlikely(exponent < DBL_MIN_10_EXP || exponent > DBL_MAX_10_EXP))	// 判断是否溢出
-			parser_throw_error(p, "Float overflow, at: %s[:%lu]", parser_error_content(p), currpos(p));
-		// 计算结果
-		int n = exponent;
-		if (n < 0) n = -n;
+		int n = exponent < 0 ? -exponent : exponent;
+		if (unlikely(n>511)) 
+			n = 511;	// inf
 		double p10 = 1.0;
 		double *d;
 		for (d = powersOf10; n != 0; n >>= 1, d += 1) {
