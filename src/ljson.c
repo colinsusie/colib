@@ -538,13 +538,14 @@ static void dumpper_process_integer(json_dumpper_t *d, lua_State *L, int idx) {
 	int i = INTEGER_BUFF_SZ;
 	membuffer_ensure_space(&d->buff, INTEGER_BUFF_SZ);
 	int64_t x = (int64_t)lua_tointeger(L, idx);
+	uint64_t ux = (uint64_t)x;
 	if (x < 0) {
 		membuffer_putc_unsafe(&d->buff, '-');
-		x = -x;
+		ux = ~ux + 1;
 	}
 	do {
-		nbuff[--i] = (x % 10) + '0';
-	} while (x /= 10);
+		nbuff[--i] = (ux % 10) + '0';
+	} while (ux /= 10);
 	membuffer_putb_unsafe(&d->buff, nbuff+i, INTEGER_BUFF_SZ-i);
 }
 
