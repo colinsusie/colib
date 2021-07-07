@@ -134,10 +134,10 @@ if true then
 				func(jsontext)
 			end
 			stopwatch:stop()
-			print(string.format("%s\t%s, seconds: %s", loadmod, file, stopwatch:elapsed()))
+			print(string.format("%s\t%s: %s", loadmod, file, stopwatch:elapsed()))
 		end
 		print("load============================================================")
-		doload("test_float.json", cojson.load, "cojson", 30)
+		-- doload("test_float.json", cojson.load, "cojson", 30)
 		-- doload("test_float.json", cjson.decode, "cjson", 30)
 		-- doload("test_float.json", moonjson.decode, "moonjson", 30)
 
@@ -150,9 +150,9 @@ if true then
 		-- doload("test_string.json", cjson.decode, "cjson", 90)
 		-- doload("test_string.json", moonjson.decode, "moonjson", 90)
 
-		-- doload("test_string2.json", cojson.load, "cojson", 50)
-		-- doload("test_string2.json", cjson.decode, "cjson", 50)
-		-- doload("test_string2.json", moonjson.decode, "moonjson", 50)
+		-- doload("test_string2.json", cojson.load, "cojson", 200)
+		-- doload("test_string2.json", cjson.decode, "cjson", 200)
+		-- doload("test_string2.json", moonjson.decode, "moonjson", 200)
 
 		-- doload("twitter.json", cojson.load, "cojson", 60)
 		-- doload("twitter.json", cjson.decode, "cjson", 60)
@@ -162,9 +162,9 @@ if true then
 		-- doload("citm_catalog.json", cjson.decode, "cjson", 30)
 		-- doload("citm_catalog.json", moonjson.decode, "moonjson", 30)
 
-		-- doload("test_word.json", cojson.load, "cojson", 100)
-		-- doload("test_word.json", cjson.decode, "cjson", 100)
-		-- doload("test_word.json", moonjson.decode, "moonjson", 100)
+		doload("test_word.json", cojson.load, "cojson", 100)
+		doload("test_word.json", cjson.decode, "cjson", 100)
+		doload("test_word.json", moonjson.decode, "moonjson", 100)
 
 		-- doload("test_space.json", cojson.load, "cojson", 200)
 		-- doload("test_space.json", cjson.decode, "cjson", 200)
@@ -257,21 +257,45 @@ if false then
 				dump(obj)
 			end
 			stopwatch:stop()
-			print(string.format("%s\t%s, seconds: %s", mod, file, stopwatch:elapsed()))
+			print(string.format("%s\t%s: %s", mod, file, stopwatch:elapsed()))
 		end
 
 		print("dump============================================================")
-		dodump("test_float.json", cojson.load, cojson.dump, "cojson", 30)
-		dodump("test_string.json", cojson.load, cojson.dump, "cojson", 90)
-		dodump("test_string2.json", cojson.load, cojson.dump, "cojson", 50)
-		dodump("twitter.json", cojson.load, cojson.dump, "cojson", 60)
-		dodump("citm_catalog.json", cojson.load, cojson.dump, "cojson", 30)
+		-- dodump("test_float.json", cojson.load, cojson.dump, "cojson", 10)
+		-- dodump("test_float.json", cjson.decode, cjson.encode, "cjson", 10)
+		-- dodump("test_float.json", moonjson.decode, moonjson.encode, "moonjson", 10)
 
-		dodump("test_float.json", cjson.decode, cjson.encode, "cjson", 30)
-		dodump("test_string.json", cjson.decode, cjson.encode, "cjson", 90)
-		dodump("test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
-		dodump("twitter.json", cjson.decode, cjson.encode, "cjson", 60)
-		dodump("citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
+		-- dodump("test_int.json", cojson.load, cojson.dump, "cojson", 30)
+		-- dodump("test_int.json", cjson.decode, cjson.encode, "cjson", 30)
+		-- dodump("test_int.json", moonjson.decode, moonjson.encode, "moonjson", 30)
+		
+		-- dodump("test_string.json", cojson.load, cojson.dump, "cojson", 90)
+		-- dodump("test_string.json", cjson.decode, cjson.encode, "cjson", 90)
+		-- dodump("test_string.json", moonjson.decode, moonjson.encode, "moonjson", 90)
+
+		-- dodump("test_string2.json", cojson.load, cojson.dump, "cojson", 50)
+		-- dodump("test_string2.json", cjson.decode, cjson.encode, "cjson", 50)
+		-- dodump("test_string2.json", moonjson.decode, moonjson.encode, "moonjson", 50)
+
+		-- dodump("twitter.json", cojson.load, cojson.dump, "cojson", 60)
+		-- dodump("twitter.json", cjson.decode, cjson.encode, "cjson", 60)
+		-- dodump("twitter.json", moonjson.decode, moonjson.encode, "moonjson", 60)
+
+		-- dodump("citm_catalog.json", cojson.load, cojson.dump, "cojson", 30)
+		-- dodump("citm_catalog.json", cjson.decode, cjson.encode, "cjson", 30)
+		-- dodump("citm_catalog.json", moonjson.decode, moonjson.encode, "moonjson", 30)
+
+		-- dodump("test_word.json", cojson.load, cojson.dump, "cojson", 100)
+		-- dodump("test_word.json", cjson.decode, cjson.encode, "cjson", 100)
+		-- dodump("test_word.json", moonjson.decode, moonjson.encode, "moonjson", 100)
+
+		-- dodump("test_space.json", cojson.load, cojson.dump, "cojson", 200)
+		-- dodump("test_space.json", cjson.decode, cjson.encode, "cjson", 200)
+		-- dodump("test_space.json", moonjson.decode, moonjson.encode, "moonjson", 200)
+
+		-- dodump("test_utf8escape.json", cojson.load, cojson.dump, "cojson", 100)
+		-- dodump("test_utf8escape.json", cjson.decode, cjson.encode, "cjson", 100)
+		-- dodump("test_utf8escape.json", moonjson.decode, moonjson.encode, "moonjson", 100)
 	end
 	dump_benchmark()
 end
